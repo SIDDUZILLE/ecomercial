@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verdanta World | Admin Management Console</title>
+  <meta name="description" content="Verdanta World Admin Portal - Manage products, add, edit, remove artisan items, and review B2B proposal inquiries.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <div class="admin-layout">
+    
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon-wrap">
+          <svg viewBox="0 0 40 40" width="30" height="30" fill="#c59d5f">
+            <path d="M20 2C16.8 2 14.1 3.8 12.8 6.5C11.5 5.6 9.8 5 8 5C4.7 5 2 7.7 2 11C2 13.5 3.5 15.6 5.6 16.5C5.2 17.6 5 18.8 5 20C5 25.5 9.5 30 15 30H18V38H22V30H25C30.5 30 35 25.5 35 20C35 18.8 34.8 17.6 34.4 16.5C36.5 15.6 38 13.5 38 11C38 7.7 35.3 5 32 5C30.2 5 28.5 5.6 27.2 6.5C25.9 3.8 23.2 2 20 2Z"/>
+          </svg>
+        </div>
+        <div class="brand-meta">
+          <span class="brand-title">Verdanta World</span>
+          <span class="brand-sub">ADMIN CONSOLE</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <button class="nav-tab-btn active" onclick="switchTab('dashboard')">
+              <i class="fa-solid fa-chart-pie"></i> Dashboard
+            </button>
+          </li>
+          <li>
+            <button class="nav-tab-btn" onclick="switchTab('products')">
+              <i class="fa-solid fa-boxes-stacked"></i> Products Catalog
+              <span class="sidebar-badge" id="sidebarProductCount">0</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-tab-btn" onclick="switchTab('proposals')">
+              <i class="fa-solid fa-file-signature"></i> Proposal Requests
+              <span class="sidebar-badge badge-gold" id="sidebarProposalCount">0</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-tab-btn" onclick="switchTab('orders')">
+              <i class="fa-solid fa-bag-shopping"></i> Customer Orders
+              <span class="sidebar-badge" id="sidebarOrderCount">0</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="index.html" class="view-store-btn" target="_blank">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> View Live Store
+        </a>
+        <button class="reset-catalog-btn" onclick="confirmResetCatalog()">
+          <i class="fa-solid fa-rotate-left"></i> Reset Seed Data
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="admin-main">
+      
+      <!-- Top Bar -->
+      <header class="admin-topbar">
+        <div class="topbar-left">
+          <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+          <h2 id="currentPageTitle">Dashboard Overview</h2>
+        </div>
+        <div class="topbar-right">
+          <button class="btn btn-primary btn-sm" onclick="openAddProductModal()" style="background: var(--color-gold); border-color: var(--color-gold); color: #fff; font-weight: 700; box-shadow: 0 2px 8px rgba(197, 157, 95, 0.3);">
+            <i class="fa-solid fa-camera"></i> + Add Product Photo
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="switchTab('products')" style="background: #fff;">
+            <i class="fa-solid fa-boxes-stacked"></i> Category Products
+          </button>
+          <div class="admin-avatar">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>Artisan Admin</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="admin-content">
+
+        <!-- ================= TAB 1: DASHBOARD ================= -->
+        <section class="tab-pane active" id="tab-dashboard">
+          
+          <!-- Metrics Cards -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon icon-products"><i class="fa-solid fa-boxes-stacked"></i></div>
+              <div class="stat-data">
+                <span class="stat-number" id="dashTotalProducts">0</span>
+                <span class="stat-label">Total Products Live</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon icon-proposals"><i class="fa-solid fa-file-signature"></i></div>
+              <div class="stat-data">
+                <span class="stat-number" id="dashTotalProposals">0</span>
+                <span class="stat-label">B2B Proposal Inquiries</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon icon-orders"><i class="fa-solid fa-bag-shopping"></i></div>
+              <div class="stat-data">
+                <span class="stat-number" id="dashTotalOrders">0</span>
+                <span class="stat-label">Completed Orders</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon icon-revenue"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+              <div class="stat-data">
+                <span class="stat-number" id="dashTotalRevenue">₹0</span>
+                <span class="stat-label">Gross Order Volume</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions & Overview Split -->
+          <div class="dashboard-split-grid">
+            
+            <!-- Recent Inquiries -->
+            <div class="card-panel">
+              <div class="panel-header">
+                <h3>Recent Proposal Inquiries</h3>
+                <button class="link-btn" onclick="switchTab('proposals')">View All</button>
+              </div>
+              <div class="panel-body" id="dashRecentProposals">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- Category Breakdown -->
+            <div class="card-panel">
+              <div class="panel-header">
+                <h3>Collections Breakdown</h3>
+                <span class="panel-tag">5 Core Disciplines</span>
+              </div>
+              <div class="panel-body">
+                <ul class="category-breakdown-list" id="categoryBreakdownList">
+                  <!-- Injected via JS -->
+                </ul>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ================= TAB 2: PRODUCTS CATALOG ================= -->
+        <section class="tab-pane" id="tab-products">
+          
+          <div class="cat-management-intro">
+            <div class="cat-intro-content">
+              <h3><i class="fa-solid fa-layer-group"></i> Category & Channel Product Management</h3>
+              <p>Every category across <strong>Shop, Corporate Gifting, Wholesale & Export</strong> has its own separate <strong>"+ Add Photo"</strong> section. Products and photos added automatically synchronize with the customer storefront.</p>
+            </div>
+            <div class="cat-intro-meta" id="totalCategoryCountBadge">
+              <span>10 Categories Active Across 4 Channels</span>
+            </div>
+          </div>
+
+          <!-- Department / Channel Filter Pills -->
+          <div class="channel-filter-bar">
+            <span class="channel-filter-label"><i class="fa-solid fa-filter"></i> Channel:</span>
+            <div class="channel-filter-pills" id="channelFilterPills">
+              <button class="channel-pill-btn active" data-channel="all" onclick="switchAdminChannel('all')">
+                <i class="fa-solid fa-layer-group"></i> All Departments (10)
+              </button>
+              <button class="channel-pill-btn" data-channel="shop" onclick="switchAdminChannel('shop')">
+                <i class="fa-solid fa-store"></i> Shop Collections (5)
+              </button>
+              <button class="channel-pill-btn" data-channel="corporate" onclick="switchAdminChannel('corporate')">
+                <i class="fa-solid fa-briefcase"></i> Corporate Gifting (6 Subs)
+              </button>
+              <button class="channel-pill-btn" data-channel="wholesale" onclick="switchAdminChannel('wholesale')">
+                <i class="fa-solid fa-boxes-packing"></i> Wholesale (Wood & Metal)
+              </button>
+              <button class="channel-pill-btn" data-channel="export" onclick="switchAdminChannel('export')">
+                <i class="fa-solid fa-earth-americas"></i> Export & Global (Wood & Metal)
+              </button>
+            </div>
+          </div>
+
+          <div class="table-toolbar category-toolbar">
+            <div style="display: flex; gap: 12px; width: 100%; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+              <div class="search-box" style="flex: 1; min-width: 260px;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="productSearchInput" placeholder="Filter products across all categories..." oninput="filterCategorySections()">
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="openAddProductModal()" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; white-space: nowrap; padding: 10px 18px; background: var(--color-gold); border-color: var(--color-gold); box-shadow: 0 2px 8px rgba(197, 157, 95, 0.3);">
+                  <i class="fa-solid fa-camera"></i> + Add Product Photo
+                </button>
+                <button class="btn btn-outline" onclick="openAddCategoryModal()" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; white-space: nowrap; padding: 10px 18px; background: #fff;">
+                  <i class="fa-solid fa-folder-plus"></i> + Add New Category
+                </button>
+              </div>
+            </div>
+
+            <div class="category-jump-pills" id="categoryJumpPills">
+              <!-- Dynamically populated jump pills -->
+            </div>
+          </div>
+
+          <!-- Dynamic Category Sections: Each category displayed as separate section with its own + Add Product button -->
+          <div class="category-sections-vertical" id="categorySectionsContainer">
+            <!-- Injected via JS -->
+          </div>
+
+        </section>
+
+        <!-- ================= TAB 3: PROPOSALS & REQUESTS ================= -->
+        <section class="tab-pane" id="tab-proposals">
+          
+          <div class="table-toolbar">
+            <div class="filter-tabs-pills">
+              <button class="pill-btn active" onclick="filterProposalsByStatus('all')">All Inquiries</button>
+              <button class="pill-btn" onclick="filterProposalsByStatus('New')">New</button>
+              <button class="pill-btn" onclick="filterProposalsByStatus('Under Review')">Under Review</button>
+              <button class="pill-btn" onclick="filterProposalsByStatus('Proposal Sent')">Proposal Sent</button>
+              <button class="pill-btn" onclick="filterProposalsByStatus('Closed')">Closed</button>
+            </div>
+
+            <div class="filter-group">
+              <button class="btn btn-outline" onclick="exportProposalsToCSV()">
+                <i class="fa-solid fa-download"></i> Export CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Proposals Table -->
+          <div class="table-card">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Client & Organization</th>
+                  <th>Contact Info</th>
+                  <th>Inquiry Type</th>
+                  <th>Est. Quantity / Budget</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th width="100" style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="proposalsTableBody">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+
+        </section>
+
+        <!-- ================= TAB 4: ORDERS ================= -->
+        <section class="tab-pane" id="tab-orders">
+          <div class="table-card">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Date & Time</th>
+                  <th>Customer</th>
+                  <th>Items Ordered</th>
+                  <th>Order Total</th>
+                  <th>Fulfillment Status</th>
+                  <th width="90" style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTableBody">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Add / Edit Product Modal -->
+  <div class="modal-backdrop" id="productModal">
+    <div class="modal-dialog">
+      <button class="modal-close" onclick="closeProductModal()"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-header">
+        <h3 id="productModalTitle">Add Product</h3>
+        <p>Handcrafted artisan creation automatically assigned to its dedicated category.</p>
+        
+        <!-- Category assignment banner: Automatically assigned from section (no dropdown required) -->
+        <div class="modal-assigned-category-banner" id="modalAssignedCategoryBanner">
+          <i class="fa-solid fa-layer-group"></i>
+          <span class="banner-lbl">Main Category:</span>
+          <strong id="modalCategoryDisplay">Artisan Gallery</strong>
+          <span class="banner-sep" id="modalSubSep" style="margin: 0 8px; opacity: 0.5;">•</span>
+          <span class="banner-lbl" id="modalSubCategoryLabel">Subtitle:</span>
+          <strong id="modalSubCategoryDisplay">Lamps & Ambient Lighting</strong>
+        </div>
+      </div>
+
+      <form id="productForm" onsubmit="handleProductSubmit(event)">
+        <input type="hidden" id="editProductId">
+        <input type="hidden" id="prodCategoryId">
+        <input type="hidden" id="prodCategory">
+        <input type="hidden" id="prodSubItem">
+        <input type="hidden" id="prodSubItemHidden">
+
+
+        <!-- Product Name (Mandatory) & Price (Optional) -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="prodTitle">Product Name <span class="required-star">*</span></label>
+            <input type="text" id="prodTitle" required placeholder="e.g. Ambient Brass & Teak Table Lamp">
+          </div>
+          <div class="form-group">
+            <label for="prodPrice">Price (₹ INR) <span class="optional-tag">(Optional)</span></label>
+            <input type="number" id="prodPrice" min="0" placeholder="e.g. 3200">
+          </div>
+        </div>
+
+        <!-- Product Image (Mandatory) with Direct Device File Upload, Live Preview, Custom URL & Presets -->
+        <div class="form-group photo-upload-group">
+          <label class="photo-section-heading">
+            <span>Product Photo / Image <span class="required-star">*</span></span>
+            <span class="photo-sub-hint">Directly choose photo from your computer or select from the gallery below</span>
+          </label>
+
+          <!-- 1. Direct File Upload Dropzone (Click or Drag & Drop) -->
+          <div class="photo-upload-dropzone" id="photoDropzone" ondragover="event.preventDefault(); this.style.borderColor='var(--color-gold)';" ondragleave="this.style.borderColor='';" ondrop="handleDropFile(event)">
+            <input type="file" id="prodFileInput" accept="image/*" style="display: none;" onchange="handleImageFileUpload(event)">
+            
+            <div class="dropzone-prompt" id="dropzonePrompt" onclick="document.getElementById('prodFileInput').click()" style="cursor: pointer;">
+              <div class="dropzone-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+              <div class="dropzone-text">
+                <strong style="font-size: 1rem;">Click to Upload Photo from Your Device</strong>
+                <span style="margin-top: 3px;">Or drag & drop photo directly here (JPG, PNG, WEBP)</span>
+              </div>
+              <button type="button" class="btn btn-sm btn-browse-file" style="margin-top: 10px; background: var(--color-gold); border-color: var(--color-gold); color: #fff; font-weight: 700; padding: 8px 18px;">
+                <i class="fa-solid fa-folder-open"></i> Choose Photo File
+              </button>
+            </div>
+
+            <!-- Live Photo Preview Box (Shown when file is chosen or preset is selected) -->
+            <div class="photo-preview-wrap" id="photoPreviewWrap" style="display: none;">
+              <div class="preview-img-container">
+                <img id="photoPreviewImg" src="" alt="Photo Preview">
+                <div class="preview-overlay-tag" id="previewSourceTag">Photo Selected</div>
+              </div>
+              <div style="display: flex; gap: 8px; justify-content: center; margin-top: 10px;">
+                <button type="button" class="btn btn-sm" onclick="document.getElementById('prodFileInput').click()" style="background:#fff; border:1px solid #ccc; font-size:0.8rem; font-weight: 600;">
+                  <i class="fa-solid fa-camera-rotate"></i> Change Photo
+                </button>
+                <button type="button" class="btn-remove-photo" onclick="removeUploadedImage(event)" title="Remove this photo">
+                  <i class="fa-solid fa-trash-can"></i> Remove Photo
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <input type="hidden" id="prodCustomImage" value="">
+
+          <!-- 3. Or Select from Quick Preset Photos -->
+          <div class="preset-picker-section" style="margin-top: 14px;">
+            <span class="preset-picker-label">Or Pick from Curated Craft Gallery (12 Real Photos):</span>
+            <div class="image-preset-picker" id="imagePresetPicker">
+              <label class="img-radio-label">
+                <input type="radio" name="prodImgPreset" value="images/artisan-gallery.jpg" onchange="handlePresetSelect(this.value)">
+                <img src="images/artisan-gallery.jpg" alt="Artisan Pottery">
+                <span>Pottery</span>
+              </label>
+              <label class="img-radio-label">
+                <input type="radio" name="prodImgPreset" value="images/wooden-gallery.jpg" onchange="handlePresetSelect(this.value)">
+                <img src="images/wooden-gallery.jpg" alt="Wooden crafts">
+                <span>Wooden</span>
+              </label>
+              <label class="img-radio-label">
+                <input type="radio" name="prodImgPreset" value="images/terracotta-pot.jpg" onchange="handlePresetSelect(this.value)">
+                <img src="images/terracotta-pot.jpg" alt="Terracotta">
+                <span>Clay Pot</span>
+              </label>
+              <label class="img-radio-label">
+                <input type="radio" name="prodImgPreset" value="images/grass-basket.jpg" onchange="handlePresetSelect(this.value)">
+                <img src="images/grass-basket.jpg" alt="Sabai Grass">
+                <span>Grass Basket</span>
+              </label>
+              <label class="img-radio-label">
+                <input type="radio" name="prodImgPreset" value="images/hero.jpg" onchange="handlePresetSelect(this.value)">
+                <img src="images/hero.jpg" alt="Artisan Lamp">
+                <span>Lamp</span>
+              </label>
+              <label class="img-radio-label">
+                <input type="radio" name="prodImgPreset" value="images/premium-decor.jpg" onchange="handlePresetSelect(this.value)">
+                <img src="images/premium-decor.jpg" alt="Home Decor">
+                <span>Decor</span>
+              </label>
+              <label class="img-radio-label">
+                <input type="radio" name="prodImgPreset" value="images/personalization.jpg" onchange="handlePresetSelect(this.value)">
+                <img src="images/personalization.jpg" alt="Personalization">
+                <span>Keepsake</span>
+              </label>
+              <label class="img-radio-label">
+                <input type="radio" name="prodImgPreset" value="images/esg-corporate.jpg" onchange="handlePresetSelect(this.value)">
+                <img src="images/esg-corporate.jpg" alt="ESG Corporate">
+                <span>ESG Box</span>
+              </label>
+              <label class="img-radio-label">
+                <input type="radio" name="prodImgPreset" value="images/corporate-lifestyle.jpg" onchange="handlePresetSelect(this.value)">
+                <img src="images/corporate-lifestyle.jpg" alt="Corporate Lifestyle">
+                <span>Corporate</span>
+              </label>
+              <label class="img-radio-label">
+                <input type="radio" name="prodImgPreset" value="images/global-sourcing.jpg" onchange="handlePresetSelect(this.value)">
+                <img src="images/global-sourcing.jpg" alt="Global Export">
+                <span>Export</span>
+              </label>
+              <label class="img-radio-label">
+                <input type="radio" name="prodImgPreset" value="images/wholesale.jpg" onchange="handlePresetSelect(this.value)">
+                <img src="images/wholesale.jpg" alt="Wholesale Retail">
+                <span>Wholesale</span>
+              </label>
+              <label class="img-radio-label">
+                <input type="radio" name="prodImgPreset" value="images/sustainability-crafts.jpg" onchange="handlePresetSelect(this.value)">
+                <img src="images/sustainability-crafts.jpg" alt="Eco Sustainable">
+                <span>Eco Crafts</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Badge & Extra Attributes -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="prodBadge">Product Badge / Tag <span class="optional-tag">(Optional)</span></label>
+            <select id="prodBadge">
+              <option value="Artisan Signature">Artisan Signature</option>
+              <option value="Bestseller">Bestseller</option>
+              <option value="Eco Certified">Eco Certified</option>
+              <option value="Limited Edition">Limited Edition</option>
+              <option value="Generational Craft">Generational Craft</option>
+              <option value="New Arrival">New Arrival</option>
+              <option value="Curator Choice">Curator Choice</option>
+          </div>
+        </div>
+
+        <!-- Origin (Optional) & Materials (Optional) -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="prodOrigin">Craft Origin & Cluster <span class="optional-tag">(Optional)</span></label>
+            <input type="text" id="prodOrigin" placeholder="e.g. Saharanpur, Uttar Pradesh">
+          </div>
+          <div class="form-group">
+            <label for="prodMaterial">Materials Specification <span class="optional-tag">(Optional)</span></label>
+            <input type="text" id="prodMaterial" placeholder="e.g. Solid Indian Teak, Brass Hands">
+          </div>
+        </div>
+
+        <!-- Description (Optional) -->
+        <div class="form-group">
+          <label for="prodDescription">Product Description <span class="optional-tag">(Optional)</span></label>
+          <textarea id="prodDescription" rows="3" placeholder="Describe the artisan craft techniques, generational discipline, and tactile details..."></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveProductBtn">Save Product to Live Store</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add / Edit Category Modal -->
+  <div class="modal-backdrop" id="categoryModal">
+    <div class="modal-dialog">
+      <button class="modal-close" onclick="closeCategoryModal()"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-header">
+        <h3 id="categoryModalTitle">Add New Product Category</h3>
+        <p>This category will automatically synchronize and appear across both Admin and Customer Storefront.</p>
+      </div>
+
+      <form id="categoryForm" onsubmit="handleCategorySubmit(event)">
+        <input type="hidden" id="editCategoryId">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="newCatName">Category Name <span class="required-star">*</span></label>
+            <input type="text" id="newCatName" required placeholder="e.g. Brass & Metal Crafts">
+          </div>
+          <div class="form-group">
+            <label for="newCatChannel">Channel / Department <span class="required-star">*</span></label>
+            <select id="newCatChannel" required>
+              <option value="shop">Shop Collections (Storefront)</option>
+              <option value="corporate">Corporate Gifting (B2B)</option>
+              <option value="wholesale">Wholesale (Domestic Bulk)</option>
+              <option value="export">Export & Global Sourcing</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="newCatBadge">Collection Tag / Badge <span class="optional-tag">(Optional)</span></label>
+            <input type="text" id="newCatBadge" placeholder="e.g. Collection 06">
+          </div>
+          <div class="form-group">
+            <label for="newCatImage">Cover Image URL / Path <span class="optional-tag">(Optional)</span></label>
+            <input type="text" id="newCatImage" placeholder="e.g. images/wooden-gallery.jpg or https://...">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="newCatDescription">Description / Mission <span class="optional-tag">(Optional)</span></label>
+          <textarea id="newCatDescription" rows="2" placeholder="Brief description of this artisan category..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="newCatSubCategories">Initial Subtitle Categories <span class="optional-tag">(Optional, comma separated)</span></label>
+          <input type="text" id="newCatSubCategories" placeholder="e.g. Sculptures, Wall Art, Candle Holders">
+          <small class="helper-text">Enter subtitle categories separated by commas. You can also add more anytime from each category card.</small>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeCategoryModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveCategoryBtn">Create Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Product Confirmation Modal -->
+  <div class="modal-backdrop" id="deleteConfirmModal">
+    <div class="modal-dialog modal-dialog-sm">
+      <button class="modal-close" onclick="closeDeleteConfirmModal()"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-header modal-header-center">
+        <div class="delete-icon-box">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h3 style="margin-top: 12px; margin-bottom: 6px;">Delete Product</h3>
+        <p class="delete-confirm-prompt">Are you sure you want to delete this product?</p>
+      </div>
+
+      <div class="delete-product-card-preview" id="deleteProductPreview">
+        <!-- Injected via JS -->
+      </div>
+
+      <div class="modal-footer modal-footer-split">
+        <button type="button" class="btn btn-secondary" onclick="closeDeleteConfirmModal()">Cancel</button>
+        <button type="button" class="btn btn-danger" id="executeDeleteBtn" onclick="executeDeleteProduct()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Proposal View Details Modal -->
+  <div class="modal-backdrop" id="proposalDetailModal">
+    <div class="modal-dialog">
+      <button class="modal-close" onclick="closeProposalDetailModal()"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-header">
+        <h3 id="propDetailTitle">Inquiry Details</h3>
+        <span class="panel-tag" id="propDetailStatus">Status</span>
+      </div>
+      <div class="proposal-detail-content" id="proposalDetailBody">
+        <!-- Injected via JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeProposalDetailModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div class="admin-toast" id="adminToast">
+    <i class="fa-solid fa-check-circle"></i>
+    <span id="adminToastMessage">Action completed successfully</span>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

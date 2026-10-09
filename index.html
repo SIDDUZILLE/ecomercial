@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verdanta World | Crafted by Artisans. Inspired by India.</title>
+  <meta name="description" content="Discover thoughtfully crafted Indian home décor, wooden crafts, artisan pottery, ESG corporate gifting, and bespoke personalized gifts celebrating master artisans.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons for clean luxury iconography -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Announcement Bar -->
+  <div class="announcement-bar">
+    <div class="container announcement-content">
+      <span><i class="fa-solid fa-leaf"></i> 100% ETHICALLY SOURCED • EMPOWERING 1,200+ TRADITIONAL ARTISANS</span>
+      <span class="announcement-desktop-only">COMPLIMENTARY SHIPPING ON DOMESTIC ORDERS OVER ₹2,499</span>
+      <div class="currency-selector">
+        <span>INR (₹)</span> | <span>USD ($)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header" id="siteHeader">
+    <div class="container header-inner">
+      
+      <!-- Mobile Menu Button -->
+      <button class="mobile-toggle-btn" id="mobileMenuBtn" aria-label="Toggle navigation">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+
+      <!-- Brand Logo -->
+      <a href="#home" class="brand-logo" id="brandLogo">
+        <div class="brand-icon">
+          <!-- Elegant Artisan Tree Logo Mark matching Verdanta World -->
+          <svg viewBox="0 0 40 40" width="34" height="34" fill="currentColor">
+            <path d="M20 2C16.8 2 14.1 3.8 12.8 6.5C11.5 5.6 9.8 5 8 5C4.7 5 2 7.7 2 11C2 13.5 3.5 15.6 5.6 16.5C5.2 17.6 5 18.8 5 20C5 25.5 9.5 30 15 30H18V38H22V30H25C30.5 30 35 25.5 35 20C35 18.8 34.8 17.6 34.4 16.5C36.5 15.6 38 13.5 38 11C38 7.7 35.3 5 32 5C30.2 5 28.5 5.6 27.2 6.5C25.9 3.8 23.2 2 20 2Z" opacity="0.9"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Verdanta World</span>
+          <span class="brand-tagline">ARTISAN • HERITAGE • CONSCIOUS</span>
+        </div>
+      </a>
+
+      <!-- Right Action Icons -->
+      <div class="header-actions">
+        <a href="admin.html" class="action-icon-btn admin-portal-btn" title="Admin Portal - Manage Products & Requests">
+          <i class="fa-solid fa-user-gear"></i>
+          <span class="admin-pill">Admin</span>
+        </a>
+        <button class="action-icon-btn" id="searchTriggerBtn" title="Search catalog">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+        <button class="action-icon-btn" id="wishlistTriggerBtn" title="Saved Wishlist">
+          <i class="fa-regular fa-heart"></i>
+          <span class="action-badge" id="wishlistCount">0</span>
+        </button>
+        <button class="action-icon-btn cart-icon-btn" id="cartTriggerBtn" title="Shopping Cart">
+          <i class="fa-solid fa-bag-shopping"></i>
+          <span class="action-badge" id="cartCount">0</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Main Navigation Bar (NOTE: 'OUR STORY' REMOVED as requested) -->
+    <nav class="main-navigation" id="mainNavigation">
+      <div class="container">
+        <ul class="nav-links">
+          <li><a href="#home" class="nav-link active">HOME</a></li>
+          
+          <!-- Dropdown for Shop Categories -->
+          <li class="has-dropdown shop-dropdown-item">
+            <a href="#categories" class="nav-link">SHOP <i class="fa-solid fa-chevron-down nav-caret"></i></a>
+            <div class="mega-dropdown">
+              <div class="mega-dropdown-grid" id="shopMegaDropdownGrid">
+                <div class="mega-col">
+                  <h4 class="mega-title">1. ARTISAN GALLERY</h4>
+                  <ul class="mega-list">
+                    <li><a href="#categories" data-category="Artisan Gallery" data-sub="Lamps & Ambient Lighting"><i class="fa-solid fa-angle-right"></i> Lamps & Ambient Lighting</a></li>
+                    <li><a href="#categories" data-category="Artisan Gallery" data-sub="Terracotta & Clay Crafts"><i class="fa-solid fa-angle-right"></i> Terracotta & Clay Crafts</a></li>
+                    <li><a href="#categories" data-category="Artisan Gallery" data-sub="Handwoven"><i class="fa-solid fa-angle-right"></i> Handwoven</a></li>
+                    <li><a href="#categories" data-category="Artisan Gallery" data-sub="Cane crafts"><i class="fa-solid fa-angle-right"></i> Cane crafts</a></li>
+                    <li><a href="#categories" data-category="Artisan Gallery" data-sub="Artisan Décor"><i class="fa-solid fa-angle-right"></i> Artisan Décor</a></li>
+                  </ul>
+                </div>
+                <div class="mega-col">
+                  <h4 class="mega-title">2. WOODEN CRAFTS</h4>
+                  <ul class="mega-list">
+                    <li><a href="#categories" data-category="Wooden Gallery" data-sub="Toys"><i class="fa-solid fa-angle-right"></i> Toys</a></li>
+                    <li><a href="#categories" data-category="Wooden Gallery" data-sub="Keychains & Mini Gifts"><i class="fa-solid fa-angle-right"></i> Keychains & Mini Gifts</a></li>
+                    <li><a href="#categories" data-category="Wooden Gallery" data-sub="Tea-Light Candles"><i class="fa-solid fa-angle-right"></i> Tea-Light Candles</a></li>
+                    <li><a href="#categories" data-category="Wooden Gallery" data-sub="Wooden Clocks"><i class="fa-solid fa-angle-right"></i> Wooden Clocks</a></li>
+                    <li><a href="#categories" data-category="Wooden Gallery" data-sub="Wooden Decor"><i class="fa-solid fa-angle-right"></i> Wooden Decor</a></li>
+                  </ul>
+                </div>
+                <div class="mega-col">
+                  <h4 class="mega-title">3. PREMIUM HOME DÉCOR</h4>
+                  <ul class="mega-list">
+                    <li><a href="#categories" data-category="Premium Home Decor" data-sub="Table Décor"><i class="fa-solid fa-angle-right"></i> Table Décor</a></li>
+                    <li><a href="#categories" data-category="Premium Home Decor" data-sub="Wall Décor"><i class="fa-solid fa-angle-right"></i> Wall Décor</a></li>
+                    <li><a href="#categories" data-category="Premium Home Decor" data-sub="Traditional & Heritage Décor"><i class="fa-solid fa-angle-right"></i> Traditional & Heritage Décor</a></li>
+                    <li><a href="#categories" data-category="Premium Home Decor" data-sub="Sculptures & Figurines"><i class="fa-solid fa-angle-right"></i> Sculptures & Figurines</a></li>
+                  </ul>
+                </div>
+                <div class="mega-col">
+                  <h4 class="mega-title">4. GIFTING</h4>
+                  <ul class="mega-list">
+                    <li><a href="#categories" data-category="Personalization Gifting" data-sub="Return Gifts"><i class="fa-solid fa-angle-right"></i> Return Gifts</a></li>
+                    <li><a href="#categories" data-category="Personalization Gifting" data-sub="Festive Gifts"><i class="fa-solid fa-angle-right"></i> Festive Gifts</a></li>
+                    <li><a href="#categories" data-category="Personalization Gifting" data-sub="Curated Gift Sets"><i class="fa-solid fa-angle-right"></i> Curated Gift Sets</a></li>
+                    <li><a href="#categories" data-category="Personalization Gifting" data-sub="Eco-Friendly Gifts"><i class="fa-solid fa-angle-right"></i> Eco-Friendly Gifts</a></li>
+                    <li><a href="#categories" data-category="Personalization Gifting" data-sub="Occasion Gifts"><i class="fa-solid fa-angle-right"></i> Occasion Gifts</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <!-- Dropdown for Corporate Gifting -->
+          <li class="has-dropdown corporate-dropdown-item">
+            <a href="#corporate" class="nav-link">CORPORATE GIFTING <i class="fa-solid fa-chevron-down nav-caret"></i></a>
+            <div class="corporate-menu-dropdown">
+              <ul class="corporate-menu-list">
+                <li><a href="#corporate" onclick="openProposalModal('Employee Welcome & Onboarding')">1. EMPLOYEE WELCOME & ONBOARDING</a></li>
+                <li><a href="#corporate" onclick="openProposalModal('Employee Recognition & Milestones')">2. EMPLOYEE RECOGNITION & MILESTONES</a></li>
+                <li><a href="#corporate" onclick="openProposalModal('Festive & Celebration Gifting')">3. FESTIVE & CELEBRATION GIFTING</a></li>
+                <li><a href="#corporate" onclick="openProposalModal('Client, Partner & Executive Gifting')">4. CLIENT, PARTNER & EXECUTIVE GIFTING</a></li>
+                <li><a href="#corporate" onclick="openProposalModal('Sustainable & ESG Gifting')">5. SUSTAINABLE & ESG GIFTING</a></li>
+                <li><a href="#corporate" onclick="openProposalModal('Curated & Custom Corporate Gift Sets')">6. CURATED & CUSTOM CORPORATE GIFT SETS</a></li>
+              </ul>
+            </div>
+          </li>
+
+          <!-- Dropdown for Wholesale -->
+          <li class="has-dropdown wholesale-dropdown-item">
+            <a href="#wholesale" class="nav-link">WHOLESALE <i class="fa-solid fa-chevron-down nav-caret"></i></a>
+            <div class="split-menu-dropdown wholesale-menu-dropdown">
+              <div class="split-menu-grid">
+                <div class="split-menu-col">
+                  <h4 class="split-menu-header">WOOD</h4>
+                  <ul class="split-menu-list">
+                    <li><a href="#wholesale" onclick="openProposalModal('Wholesale Wood - Elephant')">1. Elephant</a></li>
+                    <li><a href="#wholesale" onclick="openProposalModal('Wholesale Wood - Buddha')">2. Buddha</a></li>
+                    <li><a href="#wholesale" onclick="openProposalModal('Wholesale Wood - Tea-Light Holders')">3. Tea-Light Holders</a></li>
+                    <li><a href="#wholesale" onclick="openProposalModal('Wholesale Wood - Traditional Toys & Figurines')">4. Traditional Toys & Figurines</a></li>
+                    <li><a href="#wholesale" onclick="openProposalModal('Wholesale Wood - Decorative Boxes & Trays')">5. Decorative Boxes & Trays</a></li>
+                  </ul>
+                </div>
+                <div class="split-menu-col">
+                  <h4 class="split-menu-header">METAL</h4>
+                  <ul class="split-menu-list">
+                    <li><a href="#wholesale" onclick="openProposalModal('Wholesale Metal - Radha Krishna')">1. Radha Krishna</a></li>
+                    <li><a href="#wholesale" onclick="openProposalModal('Wholesale Metal - Buddha')">2. Buddha</a></li>
+                    <li><a href="#wholesale" onclick="openProposalModal('Wholesale Metal - Musician Sets')">3. Musician Sets</a></li>
+                    <li><a href="#wholesale" onclick="openProposalModal('Wholesale Metal - Elephant & Animal')">4. Elephant & Animal</a></li>
+                    <li><a href="#wholesale" onclick="openProposalModal('Wholesale Metal - Artistic Wall Décor')">5. Artistic Wall Décor</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <!-- Dropdown for Export -->
+          <li class="has-dropdown export-dropdown-item">
+            <a href="#export" class="nav-link">EXPORT <i class="fa-solid fa-chevron-down nav-caret"></i></a>
+            <div class="split-menu-dropdown export-menu-dropdown">
+              <div class="split-menu-grid">
+                <div class="split-menu-col">
+                  <h4 class="split-menu-header">WOOD</h4>
+                  <ul class="split-menu-list">
+                    <li><a href="#export" onclick="openProposalModal('Export Wood - Wooden Decorative Trays')">1. Wooden Decorative Trays</a></li>
+                    <li><a href="#export" onclick="openProposalModal('Export Wood - Wooden Boxes & Organisers')">2. Wooden Boxes & Organisers</a></li>
+                    <li><a href="#export" onclick="openProposalModal('Export Wood - Wooden Tea-Light Holders')">3. Wooden Tea-Light Holders</a></li>
+                    <li><a href="#export" onclick="openProposalModal('Export Wood - Figurines & Sculptural Décor')">4. Figurines & Sculptural Décor</a></li>
+                    <li><a href="#export" onclick="openProposalModal('Export Wood - Traditional Toys & Play Objects')">5. Traditional Toys & Play Objects</a></li>
+                  </ul>
+                </div>
+                <div class="split-menu-col">
+                  <h4 class="split-menu-header">METAL</h4>
+                  <ul class="split-menu-list">
+                    <li><a href="#export" onclick="openProposalModal('Export Metal - Metal Sculptural Figurines')">1. Metal Sculptural Figurines</a></li>
+                    <li><a href="#export" onclick="openProposalModal('Export Metal - Metal Table & Wall Décor')">2. Metal Table & Wall Décor</a></li>
+                    <li><a href="#export" onclick="openProposalModal('Export Metal - Candle / Tea-Light Holders')">3. Candle / Tea-Light Holders</a></li>
+                    <li><a href="#export" onclick="openProposalModal('Export Metal - Indian Musician Sets')">4. Indian Musician Sets</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </li>
+          <li><a href="#why-us" class="nav-link">WHY US</a></li>
+          <li><a href="#sustainability" class="nav-link">SUSTAINABILITY</a></li>
+          <li><a href="#visit-us" class="nav-link">VISIT US</a></li>
+          <li><a href="#contact" class="nav-link">CONTACT</a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section" id="home">
+    <div class="hero-backdrop" style="background-image: url('images/hero.jpg');"></div>
+    <div class="hero-overlay"></div>
+    
+    <div class="container hero-container">
+      <div class="hero-content">
+        <span class="hero-eyebrow">ARTISANAL EXCELLENCE • DIRECT FROM INDIA</span>
+        <h1 class="hero-title">
+          CRAFTED BY ARTISANS.<br>
+          INSPIRED BY INDIA.<br>
+          MADE MEANINGFUL.
+        </h1>
+        <p class="hero-subtitle">
+          Discover thoughtfully crafted home décor and meaningful gifts that celebrate Indian craftsmanship, empower artisans and inspire more sustainable living.
+        </p>
+        <div class="hero-buttons">
+          <a href="#categories" class="btn btn-primary" id="heroShopBtn">SHOP COLLECTIONS</a>
+          <button class="btn btn-secondary" onclick="openProposalModal('General Inquiry')">REQUEST A PROPOSAL</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Badges Bar / Why Us -->
+  <section class="trust-bar" id="why-us">
+    <div class="container trust-grid">
+      <div class="trust-item">
+        <div class="trust-icon"><i class="fa-solid fa-hand-holding-heart"></i></div>
+        <div class="trust-text">
+          <strong>Fair Trade Certified</strong>
+          <span>Empowering indigenous craft clusters</span>
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon"><i class="fa-solid fa-seedling"></i></div>
+        <div class="trust-text">
+          <strong>100% Eco-Conscious</strong>
+          <span>Zero plastic packaging & natural materials</span>
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon"><i class="fa-solid fa-earth-americas"></i></div>
+        <div class="trust-text">
+          <strong>Worldwide Export</strong>
+          <span>Reliable shipping to over 40 countries</span>
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon"><i class="fa-solid fa-award"></i></div>
+        <div class="trust-text">
+          <strong>Master Craftsmanship</strong>
+          <span>Heirloom quality handcrafted pieces</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHOP BY COLLECTION (With User's Exact 5 Categories from Notebook) -->
+  <section class="collections-section" id="categories">
+    <div class="container">
+      
+      <div class="section-header">
+        <span class="section-eyebrow">EXPLORE OUR DISCIPLINES</span>
+        <h2 class="section-title">SHOP BY COLLECTION</h2>
+        <div class="section-separator"></div>
+        <p class="section-description">
+          Each piece reflects centuries of generational mastery, natural earthen materials, and sustainable Indian craft techniques.
+        </p>
+      </div>
+
+      <!-- Category Filter Tabs -->
+      <div class="category-tabs">
+        <button class="tab-btn active" data-filter="all">All Collections</button>
+        <button class="tab-btn" data-filter="Artisan Gallery">1. Artisan Gallery</button>
+        <button class="tab-btn" data-filter="Wooden Gallery">2. Wooden Gallery</button>
+        <button class="tab-btn" data-filter="Premium Home Decor">3. Premium Home Decor</button>
+        <button class="tab-btn" data-filter="ESG Corporate Solution">4. ESG Corporate Solution</button>
+        <button class="tab-btn" data-filter="Personalization Gifting">5. Personalization Gifting</button>
+      </div>
+
+      <!-- 5 Main Featured Category Visual Cards (Grid) -->
+      <div class="category-cards-grid">
+        
+        <!-- 1. Artisan Gallery -->
+        <div class="category-card" data-category="Artisan Gallery">
+          <div class="category-card-image-wrap">
+            <img src="images/artisan-gallery.jpg" alt="Artisan Gallery - Indian Pottery, Lamp, Clay & Natural Grass" class="category-card-img" loading="lazy">
+            <div class="category-tag-badge">Collection 01</div>
+          </div>
+          <div class="category-card-content">
+            <h3 class="category-card-title">ARTISAN GALLERY</h3>
+            <ul class="subcategories-tag-list">
+              <li>• Lamp</li>
+              <li>• Terracotta Clay</li>
+              <li>• Natural Grass & Handwoven Gallery</li>
+            </ul>
+            <p class="category-card-snippet">Earthen terracotta vases, sculpted clay urns, and organic sabai grass handwoven creations.</p>
+            <button class="category-card-btn" onclick="filterAndScroll('Artisan Gallery')">EXPLORE ARTISAN GALLERY <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- 2. Wooden Gallery -->
+        <div class="category-card" data-category="Wooden Gallery">
+          <div class="category-card-image-wrap">
+            <img src="images/wooden-gallery.jpg" alt="Wooden Gallery - Handcrafted Clock, Keychain, Toys, Candle Holders" class="category-card-img" loading="lazy">
+            <div class="category-tag-badge">Collection 02</div>
+          </div>
+          <div class="category-card-content">
+            <h3 class="category-card-title">WOODEN GALLERY</h3>
+            <ul class="subcategories-tag-list">
+              <li>• Clock</li>
+              <li>• Key Chain</li>
+              <li>• Toys</li>
+              <li>• Tea Light Candle</li>
+              <li>• Decor Products</li>
+            </ul>
+            <p class="category-card-snippet">Artisanal teak & rosewood carved desk clocks, animal keychains, traditional toys & candle holders.</p>
+            <button class="category-card-btn" onclick="filterAndScroll('Wooden Gallery')">EXPLORE WOODEN GALLERY <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- 3. Premium Home Decor -->
+        <div class="category-card" data-category="Premium Home Decor">
+          <div class="category-card-image-wrap">
+            <img src="images/premium-decor.jpg" alt="Premium Home Decor - Table Decor, Wall Hanging Decor, Accessories" class="category-card-img" loading="lazy">
+            <div class="category-tag-badge">Collection 03</div>
+          </div>
+          <div class="category-card-content">
+            <h3 class="category-card-title">PREMIUM HOME DÉCOR</h3>
+            <ul class="subcategories-tag-list">
+              <li>• Table Decor</li>
+              <li>• Wall Hanging Decor</li>
+              <li>• Decorative Accessories</li>
+            </ul>
+            <p class="category-card-snippet">Sculptural brass accents, hammered urlis, contemporary geometric jute tapestries, and tabletop statement pieces.</p>
+            <button class="category-card-btn" onclick="filterAndScroll('Premium Home Decor')">EXPLORE HOME DÉCOR <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- 4. ESG Corporate Solution -->
+        <div class="category-card" data-category="ESG Corporate Solution">
+          <div class="category-card-image-wrap">
+            <img src="images/esg-corporate.jpg" alt="ESG Corporate Solution - Employee Appreciation Gift Kit, Customization Kit" class="category-card-img" loading="lazy">
+            <div class="category-tag-badge">Collection 04</div>
+          </div>
+          <div class="category-card-content">
+            <h3 class="category-card-title">ESG CORPORATE SOLUTION</h3>
+            <ul class="subcategories-tag-list">
+              <li>• Employee Appreciation Gift Kit</li>
+              <li>• Customization Kit</li>
+            </ul>
+            <p class="category-card-snippet">Sustainable, plastic-free corporate hampers with seed-paper notebooks, pure copper tumblers, and beeswax candles.</p>
+            <button class="category-card-btn" onclick="openProposalModal('ESG Corporate Solution')">REQUEST ESG PROPOSAL <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- 5. Personalization Gifting -->
+        <div class="category-card" data-category="Personalization Gifting">
+          <div class="category-card-image-wrap">
+            <img src="images/personalization.jpg" alt="Personalization Gifting - Bespoke Engraved Keepsake Gifts" class="category-card-img" loading="lazy">
+            <div class="category-tag-badge">Collection 05</div>
+          </div>
+          <div class="category-card-content">
+            <h3 class="category-card-title">PERSONALIZATION GIFTING</h3>
+            <ul class="subcategories-tag-list">
+              <li>• Custom Monogramming</li>
+              <li>• Bespoke Engraved Keepsakes</li>
+              <li>• Handcrafted Gift Sets</li>
+            </ul>
+            <p class="category-card-snippet">Artisan laser-engraved teak keepsake boxes, personalized leather accessories, wax-sealed bespoke cards.</p>
+            <button class="category-card-btn" onclick="filterAndScroll('Personalization Gifting')">EXPLORE PERSONALIZATION <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Curated Product Catalog Grid (Interactive Add to Cart & Quick View) -->
+      <div class="products-header">
+        <div>
+          <h3 class="products-section-title">FEATURED ARTISAN CREATIONS</h3>
+          <span class="product-count-label" id="productsCountText">Showing all creations</span>
+        </div>
+        <div class="products-header-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <button class="btn btn-sm btn-primary" onclick="openCustomerAddProductModal()" style="padding: 10px 18px; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 8px; background: var(--color-gold); color: #fff; border-radius: 4px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(197, 157, 95, 0.35);">
+            <i class="fa-solid fa-camera"></i> + Add Product Photo
+          </button>
+          <a href="admin.html" class="btn btn-sm btn-outline" style="padding: 10px 16px; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 6px; border-radius: 4px; font-weight: 600;">
+            <i class="fa-solid fa-user-gear"></i> Admin Console
+          </a>
+        </div>
+      </div>
+
+      <div class="product-catalog-flow" id="productCatalogGrid">
+        <!-- Injected via JavaScript from categories & items list -->
+      </div>
+
+      <div class="catalog-cta-wrap">
+        <button class="btn btn-outline" id="loadMoreProductsBtn" onclick="toggleAllProducts()">VIEW COMPLETE ARTISAN CATALOGUE</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CORPORATE GIFTING & ESG SOLUTIONS (Exact Match to Image 1 Center Layout) -->
+  <section class="corporate-section" id="corporate">
+    <div class="container">
+      
+      <div class="corporate-header">
+        <span class="section-eyebrow">SUSTAINABLE PARTNERSHIPS</span>
+        <h2 class="corporate-main-heading">CORPORATE GIFTING</h2>
+        <span class="corporate-sub-heading">Employee & Client Gifts & ESG Gifting</span>
+        <div class="section-separator"></div>
+      </div>
+
+      <!-- 4 Pillars of Corporate Gifting Grid -->
+      <div class="corporate-categories-grid">
+        <div class="corporate-category-box">
+          <div class="corporate-cat-header">
+            <span class="corporate-cat-num">01</span>
+            <h4 class="corporate-cat-title">Employee Gifting</h4>
+          </div>
+          <p class="corporate-cat-tagline">Celebrate milestones and inspire team loyalty with heirloom desk accents.</p>
+          <ul class="corporate-cat-list">
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Onboarding & Welcome Hampers')"><i class="fa-solid fa-angle-right"></i> Onboarding & Welcome</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Desk Décor & Workspace Living')"><i class="fa-solid fa-angle-right"></i> Desk Décor & Living</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Work Anniversary & Milestone Trophies')"><i class="fa-solid fa-angle-right"></i> Milestone Trophies</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Workplace Wellness & Pause Rituals')"><i class="fa-solid fa-angle-right"></i> Workplace Wellness</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Eco Commute & Lifestyle')"><i class="fa-solid fa-angle-right"></i> Eco Commute & Lifestyle</a></li>
+          </ul>
+        </div>
+
+        <div class="corporate-category-box">
+          <div class="corporate-cat-header">
+            <span class="corporate-cat-num">02</span>
+            <h4 class="corporate-cat-title">Festive Gifting</h4>
+          </div>
+          <p class="corporate-cat-tagline">Honor traditions with brassware, deepams, and artisanal festive thalis.</p>
+          <ul class="corporate-cat-list">
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Diwali Illuminations & Deepams')"><i class="fa-solid fa-angle-right"></i> Diwali Illuminations</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Pooja & Sacred Heritage Keepsakes')"><i class="fa-solid fa-angle-right"></i> Sacred Keepsakes</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Artisanal Confectionery & Dry Fruit Thalis')"><i class="fa-solid fa-angle-right"></i> Confectionery Thalis</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Festive Home Accents & Door Décor')"><i class="fa-solid fa-angle-right"></i> Festive Home Accents</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('New Year & Solstice Reflections')"><i class="fa-solid fa-angle-right"></i> New Year Reflections</a></li>
+          </ul>
+        </div>
+
+        <div class="corporate-category-box">
+          <div class="corporate-cat-header">
+            <span class="corporate-cat-num">03</span>
+            <h4 class="corporate-cat-title">Custom Gift Kits</h4>
+          </div>
+          <p class="corporate-cat-tagline">Curate bespoke combinations with custom monograms and branded packaging.</p>
+          <ul class="corporate-cat-list">
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Executive Leadership Boxes')"><i class="fa-solid fa-angle-right"></i> Executive Leadership</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Conference & Delegate Kits')"><i class="fa-solid fa-angle-right"></i> Conference & Delegate</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Client Appreciation & Relationship Hampers')"><i class="fa-solid fa-angle-right"></i> Client Appreciation</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Bespoke Multi-Craft Fusion Boxes')"><i class="fa-solid fa-angle-right"></i> Multi-Craft Fusion</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Monogrammed & Branded Collections')"><i class="fa-solid fa-angle-right"></i> Monogrammed Collections</a></li>
+          </ul>
+        </div>
+
+        <div class="corporate-category-box">
+          <div class="corporate-cat-header">
+            <span class="corporate-cat-num">04</span>
+            <h4 class="corporate-cat-title">ESG / Impact Gifting</h4>
+          </div>
+          <p class="corporate-cat-tagline">Verified fair-wage artisan products, plastic-free circular packaging.</p>
+          <ul class="corporate-cat-list">
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Zero-Waste & Circular Living')"><i class="fa-solid fa-angle-right"></i> Zero-Waste Living</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Women Artisan Collective Specials')"><i class="fa-solid fa-angle-right"></i> Women Collectives</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Indigenous & Endangered Craft Revival')"><i class="fa-solid fa-angle-right"></i> Craft Revival</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Biodegradable Dining & Pantry Gifts')"><i class="fa-solid fa-angle-right"></i> Biodegradable Dining</a></li>
+            <li><a href="javascript:void(0)" onclick="openProposalModal('Carbon-Neutral Certified Hampers')"><i class="fa-solid fa-angle-right"></i> Carbon-Neutral Hampers</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="corporate-grid">
+        
+        <!-- Left Image Card: ESG Hamper Box -->
+        <div class="corporate-visual-card">
+          <div class="corporate-img-box">
+            <img src="images/esg-corporate.jpg" alt="Eco-Growth ESG Corporate Gifting Kit" loading="lazy">
+            <div class="img-badge-pill">ESG Gifting</div>
+          </div>
+          <div class="corporate-card-caption">
+            <h4>Employee Appreciation Gift Kit</h4>
+            <p>Handmade seed paper journal, pure hammered copper tumbler, bamboo pen, and natural beeswax candle in biodegradable kraft gift packaging.</p>
+          </div>
+        </div>
+
+        <!-- Right Image Card: Luxury Ribbon Gifting Experience -->
+        <div class="corporate-visual-card">
+          <div class="corporate-img-box">
+            <img src="images/corporate-lifestyle.jpg" alt="Artisan Client Gift Box with Natural Fabric Ribbon" loading="lazy">
+            <div class="img-badge-pill">Customization Kit</div>
+          </div>
+          <div class="corporate-card-caption">
+            <h4>Bespoke Executive Client Hampers</h4>
+            <p>Tailored corporate identity integration, custom-stamped foil logos, handwritten artisan thank-you notes, and zero-plastic certification.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Informational Callout Bar -->
+      <div class="corporate-action-banner">
+        <div class="corporate-action-content">
+          <h3>Elevate Your Company Gifting with Conscious Impact</h3>
+          <p>Over 180+ enterprises trust Verdanta World to deliver meaningful, memorable gifts that champion artisan livelihoods and ESG compliance.</p>
+        </div>
+        <div class="corporate-action-buttons">
+          <button class="btn btn-primary" onclick="openProposalModal('Employee & Client Gifts')">REQUEST A PROPOSAL</button>
+          <button class="btn btn-light-outline" onclick="openCatalogueModal()">VIEW ESG BROCHURE</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- WHOLESALE & EXPORT -->
+  <section class="b2b-section" id="wholesale">
+    <div class="container">
+      
+      <div class="b2b-grid">
+        
+        <!-- Wholesale Column: Indian Retail Partners -->
+        <div class="b2b-card" id="retail-partners">
+          <div class="b2b-card-image-box">
+            <img src="images/wholesale.jpg" alt="Wholesale Indian Retail Partners Artisan Distribution Warehouse" loading="lazy">
+            <div class="b2b-badge">WHOLESALE</div>
+          </div>
+          <div class="b2b-card-body">
+            <span class="b2b-label">DOMESTIC BULK PROCUREMENT</span>
+            <h3 class="b2b-title">Indian Retail Partners</h3>
+            <p class="b2b-text">
+              Direct access for boutique lifestyle stores, department outlets, and interior designers across India. Enjoy volume pricing, guaranteed craft authenticity, and consistent domestic supply chains.
+            </p>
+            <ul class="b2b-features">
+              <li><i class="fa-solid fa-check"></i> Low minimum order quantity (MOQ)</li>
+              <li><i class="fa-solid fa-check"></i> Tiered wholesale margin structure</li>
+              <li><i class="fa-solid fa-check"></i> Direct cluster dispatch across all Indian states</li>
+            </ul>
+            <button class="btn btn-primary b2b-btn" onclick="openProposalModal('Wholesale Indian Retail')">REQUEST A PROPOSAL</button>
+          </div>
+        </div>
+
+        <!-- Export Column: International Buyers -->
+        <div class="b2b-card" id="export">
+          <div class="b2b-card-image-box">
+            <img src="images/global-sourcing.jpg" alt="Export Logistics & International Cargo Fulfillment" loading="lazy">
+            <div class="b2b-badge">EXPORT</div>
+          </div>
+          <div class="b2b-card-body">
+            <span class="b2b-label">INTERNATIONAL EXPORT SUPPLY</span>
+            <h3 class="b2b-title">International Buyers & Export</h3>
+            <p class="b2b-text">
+              Fulfilling international export consignments and shipping certified eco-conscious artisan products to retail partners, museum stores, and luxury distributors in North America, Europe, UAE, and APAC.
+            </p>
+            <ul class="b2b-features">
+              <li><i class="fa-solid fa-check"></i> Export compliant phytosanitary & safety standards</li>
+              <li><i class="fa-solid fa-check"></i> Multi-currency invoicing (USD, EUR, GBP, AUD)</li>
+              <li><i class="fa-solid fa-check"></i> Robust drop-tested export protective carton packaging</li>
+            </ul>
+            <button class="btn btn-primary b2b-btn" onclick="openCatalogueModal()">DOWNLOAD CATALOGUE</button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- VISIT OUR SHOWROOM SECTION -->
+  <section class="showroom-section" id="visit-us" style="background-image: url('images/showroom-store.jpg');">
+    <div class="showroom-overlay"></div>
+    <div class="container showroom-container">
+      <div class="showroom-wrapper">
+        <div class="showroom-content">
+          <span class="showroom-tag">FLAGSHIP CRAFT EXPERIENCES</span>
+          <h2 class="showroom-title">VISIT OUR SHOWROOM</h2>
+          <p class="showroom-text">
+            Experience the tactile warmth of handcrafted pottery, carved rosewood clocks, natural grass weaves, and bespoke gift collections in person. Meet our master artisan curators in Jaipur and Bangalore.
+          </p>
+          <div class="showroom-locations">
+            <div class="location-item">
+              <i class="fa-solid fa-location-dot"></i>
+              <div>
+                <strong>Jaipur Atelier & Design Studio</strong>
+                <span>Civil Lines, Jaipur, Rajasthan 302006</span>
+              </div>
+            </div>
+            <div class="location-item">
+              <i class="fa-solid fa-location-dot"></i>
+              <div>
+                <strong>Bangalore Experience Centre</strong>
+                <span><a href="https://maps.app.goo.gl/5ZTcvKAGmps1qPbG7?g_st=aw" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">Indiranagar 100ft Road, Bengaluru (Open in Maps)</a></span>
+                <span style="display: block; margin-top: 4px; font-size: 0.85rem; color: var(--color-primary); font-weight: 600;">
+                  <i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> <a href="https://wa.me/918867688699" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">+91 88676 88699</a>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="showroom-actions">
+            <button class="btn btn-primary" onclick="openVisitModal()">SCHEDULE A PRIVATE VISIT</button>
+            <a href="https://maps.app.goo.gl/5ZTcvKAGmps1qPbG7?g_st=aw" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">GET DIRECTIONS <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUSTAINABILITY & IMPACT (Exact Match to User Reference Design) -->
+  <section class="sustainability-section" id="sustainability">
+    <div class="container">
+      
+      <!-- Sustainability Hero Header -->
+      <div class="sustain-hero-card">
+        <div class="sustain-hero-bg" style="background-image: url('images/sustainability-banner.jpg');"></div>
+        <div class="sustain-hero-overlay"></div>
+        <div class="sustain-hero-content">
+          <div class="sustain-hero-left">
+            <h2 class="sustain-main-title">Sustainability<br>& Impact</h2>
+            <div class="sustain-tagline">PRESERVE HERITAGE • EMPOWER ARTISANS • PROTECT THE PLANET</div>
+            <p class="sustain-intro-text">
+              At <strong>Verdanta World</strong>, we believe beautiful products can create meaningful impact. We bring together Indian craftsmanship, responsible sourcing and conscious design to create products that are good for people, communities and the planet.
+            </p>
+          </div>
+          <div class="sustain-hero-right">
+            <div class="sustain-script-badge">
+              <span class="script-text">Crafting<br>a Better<br>Tomorrow</span>
+              <i class="fa-solid fa-leaf script-leaf"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6 Impact Pillar Cards Grid -->
+      <div class="sustain-cards-grid">
+        
+        <!-- Card 1: Sustainable & ESG Gifting -->
+        <div class="sustain-pillar-card">
+          <div class="sustain-card-img-wrap">
+            <img src="images/esg-corporate.jpg" alt="Sustainable & ESG Gifting" loading="lazy">
+            <div class="pillar-round-badge badge-green">
+              <i class="fa-solid fa-leaf"></i>
+            </div>
+          </div>
+          <div class="sustain-card-body">
+            <h3 class="pillar-card-title">Sustainable & ESG Gifting</h3>
+            <p class="pillar-card-desc">
+              Thoughtfully curated corporate gifting solutions using sustainable materials and artisan-made products, helping businesses align with their ESG goals.
+            </p>
+            <a href="javascript:void(0)" onclick="openProposalModal('Sustainable & ESG Gifting')" class="pillar-learn-more">Learn More <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Card 2: Artisan Empowerment -->
+        <div class="sustain-pillar-card">
+          <div class="sustain-card-img-wrap">
+            <img src="images/wooden-gallery.jpg" alt="Artisan Empowerment" loading="lazy">
+            <div class="pillar-round-badge badge-terracotta">
+              <i class="fa-solid fa-users"></i>
+            </div>
+          </div>
+          <div class="sustain-card-body">
+            <h3 class="pillar-card-title">Artisan Empowerment</h3>
+            <p class="pillar-card-desc">
+              Supporting traditional artisans through skill development, product innovation, quality improvement and better access to markets.
+            </p>
+            <a href="javascript:void(0)" onclick="openProposalModal('Artisan Empowerment & Livelihoods')" class="pillar-learn-more">Learn More <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Card 3: Women Empowerment -->
+        <div class="sustain-pillar-card">
+          <div class="sustain-card-img-wrap">
+            <img src="images/artisan-gallery.jpg" alt="Women Empowerment" loading="lazy">
+            <div class="pillar-round-badge badge-rose">
+              <i class="fa-solid fa-venus"></i>
+            </div>
+          </div>
+          <div class="sustain-card-body">
+            <h3 class="pillar-card-title">Women Empowerment</h3>
+            <p class="pillar-card-desc">
+              Creating meaningful opportunities for women through skill development, artisan engagement and livelihood-focused initiatives.
+            </p>
+            <a href="javascript:void(0)" onclick="openProposalModal('Women Empowerment Collective')" class="pillar-learn-more">Learn More <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Card 4: Responsible Sourcing -->
+        <div class="sustain-pillar-card">
+          <div class="sustain-card-img-wrap">
+            <img src="images/grass-basket.jpg" alt="Responsible Sourcing" loading="lazy">
+            <div class="pillar-round-badge badge-forest">
+              <i class="fa-solid fa-seedling"></i>
+            </div>
+          </div>
+          <div class="sustain-card-body">
+            <h3 class="pillar-card-title">Responsible Sourcing</h3>
+            <p class="pillar-card-desc">
+              Working with responsibly sourced and natural materials such as wood, bamboo, cane, terracotta and natural fibres while encouraging local craftsmanship.
+            </p>
+            <a href="javascript:void(0)" onclick="openProposalModal('Responsible & Ethical Sourcing')" class="pillar-learn-more">Learn More <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Card 5: CSR & Social Impact -->
+        <div class="sustain-pillar-card">
+          <div class="sustain-card-img-wrap">
+            <img src="images/corporate-lifestyle.jpg" alt="CSR & Social Impact" loading="lazy">
+            <div class="pillar-round-badge badge-amber">
+              <i class="fa-solid fa-hand-holding-heart"></i>
+            </div>
+          </div>
+          <div class="sustain-card-body">
+            <h3 class="pillar-card-title">CSR & Social Impact</h3>
+            <p class="pillar-card-desc">
+              Collaborating with corporates and communities on initiatives that support artisan livelihoods, preserve traditional crafts and create positive social impact.
+            </p>
+            <a href="javascript:void(0)" onclick="openProposalModal('CSR & Social Impact Partnerships')" class="pillar-learn-more">Learn More <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Card 6: Conscious Living -->
+        <div class="sustain-pillar-card">
+          <div class="sustain-card-img-wrap">
+            <img src="images/premium-decor.jpg" alt="Conscious Living" loading="lazy">
+            <div class="pillar-round-badge badge-olive">
+              <i class="fa-solid fa-house-chimney-window"></i>
+            </div>
+          </div>
+          <div class="sustain-card-body">
+            <h3 class="pillar-card-title">Conscious Living</h3>
+            <p class="pillar-card-desc">
+              Encouraging a more sustainable lifestyle through a thoughtfully curated collection of handcrafted products that carry a story and celebrate craftsmanship.
+            </p>
+            <a href="javascript:void(0)" onclick="openProposalModal('Conscious Living Catalog')" class="pillar-learn-more">Learn More <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- OUR COMMITMENT Bar -->
+      <div class="sustain-commitment-bar">
+        <div class="commitment-eyebrow">OUR COMMITMENT</div>
+        <div class="commitment-items">
+          <div class="commit-item">
+            <i class="fa-solid fa-leaf commit-icon icon-leaf"></i>
+            <span>PRESERVE HERITAGE</span>
+          </div>
+          <div class="commit-divider"></div>
+          <div class="commit-item">
+            <i class="fa-solid fa-user-group commit-icon icon-users"></i>
+            <span>EMPOWER ARTISANS</span>
+          </div>
+          <div class="commit-divider"></div>
+          <div class="commit-item">
+            <i class="fa-solid fa-earth-americas commit-icon icon-globe"></i>
+            <span>PROTECT THE PLANET</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Impact Showcase Banner -->
+      <div class="sustain-bottom-banner" style="background-image: url('images/sustainability-crafts.jpg');">
+        <div class="sustain-bottom-overlay"></div>
+        <div class="sustain-bottom-content">
+          <div class="sustain-quote-tag">
+            <div class="quote-symbol">“</div>
+            <p class="quote-text">
+              Every product carries a story.<br>
+              Every purchase can create an impact.
+            </p>
+            <i class="fa-solid fa-leaf quote-leaf-icon"></i>
+          </div>
+          
+          <div class="sustain-partner-card">
+            <h3 class="partner-card-title">Partner With Us</h3>
+            <p class="partner-card-sub">
+              For Sustainable Gifting • ESG Initiatives<br>
+              CSR Partnerships • Artisan Development
+            </p>
+            <button class="btn btn-primary partner-cta-btn" onclick="openProposalModal('Sustainability & ESG Partner')">
+              Get in Touch <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER (Exact Match to Image 1 with 'OUR STORY' Removed) -->
+  <footer class="site-footer" id="contact">
+    <div class="container footer-inner">
+      
+      <!-- Footer Brand Column -->
+      <div class="footer-col footer-col-brand">
+        <div class="footer-logo">
+          <svg viewBox="0 0 40 40" width="30" height="30" fill="#c49d63">
+            <path d="M20 2C16.8 2 14.1 3.8 12.8 6.5C11.5 5.6 9.8 5 8 5C4.7 5 2 7.7 2 11C2 13.5 3.5 15.6 5.6 16.5C5.2 17.6 5 18.8 5 20C5 25.5 9.5 30 15 30H18V38H22V30H25C30.5 30 35 25.5 35 20C35 18.8 34.8 17.6 34.4 16.5C36.5 15.6 38 13.5 38 11C38 7.7 35.3 5 32 5C30.2 5 28.5 5.6 27.2 6.5C25.9 3.8 23.2 2 20 2Z"/>
+          </svg>
+          <span class="footer-brand-name">Verdanta World</span>
+        </div>
+        <p class="footer-brand-mission">
+          To premium, authentic, and globally-credible Indian craftsmanship.
+        </p>
+        <p class="footer-contact-info">
+          <i class="fa-solid fa-envelope"></i> contact@verdantaworld.com<br>
+          <i class="fa-solid fa-phone"></i> <a href="tel:+918867688699" style="color: inherit; text-decoration: none;">+91 88676 88699</a><br>
+          <i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> <a href="https://wa.me/918867688699" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">WhatsApp: +91 88676 88699</a><br>
+          <i class="fa-solid fa-location-dot"></i> <a href="https://maps.app.goo.gl/5ZTcvKAGmps1qPbG7?g_st=aw" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">Bengaluru Experience Centre (Map)</a>
+        </p>
+        <p class="footer-copyright">
+          Copyright &copy; 2026 | Verdanta World. All Rights Reserved.
+        </p>
+      </div>
+
+      <!-- Footer Quick Links (Note: NO 'OUR STORY') -->
+      <div class="footer-col">
+        <h4 class="footer-col-title">NAVIGATION</h4>
+        <ul class="footer-menu">
+          <li><a href="#home">Home</a></li>
+          <li><a href="#categories">Shop Collections</a></li>
+          <li><a href="#corporate">Corporate Gifting</a></li>
+          <li><a href="#wholesale">Wholesale Partners</a></li>
+          <li><a href="#export">Export & Sourcing</a></li>
+          <li><a href="#why-us">Why Us</a></li>
+          <li><a href="#sustainability">Sustainability</a></li>
+          <li><a href="#visit-us">Visit Us</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="admin.html" style="color: var(--color-gold); font-weight: 600;"><i class="fa-solid fa-lock"></i> Admin Portal</a></li>
+        </ul>
+      </div>
+
+      <!-- Footer Categories List -->
+      <div class="footer-col">
+        <h4 class="footer-col-title">COLLECTIONS</h4>
+        <ul class="footer-menu">
+          <li><a href="#categories" onclick="filterAndScroll('Artisan Gallery')">Artisan Gallery</a></li>
+          <li><a href="#categories" onclick="filterAndScroll('Wooden Gallery')">Wooden Gallery</a></li>
+          <li><a href="#categories" onclick="filterAndScroll('Premium Home Decor')">Premium Home Décor</a></li>
+          <li><a href="#corporate">ESG Corporate Solution</a></li>
+          <li><a href="#categories" onclick="filterAndScroll('Personalization Gifting')">Personalization Gifting</a></li>
+        </ul>
+      </div>
+
+      <!-- Social and Newsletter -->
+      <div class="footer-col footer-col-social">
+        <h4 class="footer-col-title">SOCIAL US</h4>
+        <div class="social-links">
+          <a href="https://www.instagram.com/verdantaworld?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="social-btn"><i class="fa-brands fa-instagram"></i></a>
+          <a href="#" aria-label="Facebook" class="social-btn"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="#" aria-label="LinkedIn" class="social-btn"><i class="fa-brands fa-linkedin-in"></i></a>
+          <a href="#" aria-label="Pinterest" class="social-btn"><i class="fa-brands fa-pinterest-p"></i></a>
+        </div>
+        
+        <div class="footer-newsletter">
+          <span class="newsletter-title">Subscribe to Artisan Chronicles</span>
+          <p class="newsletter-sub">Receive seasonal collection previews and craft heritage stories.</p>
+          <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Thank you for subscribing to Verdanta World!'); this.reset();">
+            <input type="email" placeholder="Enter your business or personal email" required>
+            <button type="submit" aria-label="Subscribe"><i class="fa-solid fa-arrow-right"></i></button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- ================= MODALS & DRAWERS ================= -->
+
+  <!-- 1. Shopping Cart Drawer -->
+  <div class="drawer-overlay" id="cartOverlay" onclick="closeCart()"></div>
+  <aside class="cart-drawer" id="cartDrawer" aria-label="Shopping Cart Drawer">
+    <div class="cart-drawer-header">
+      <div class="cart-drawer-title">
+        <i class="fa-solid fa-bag-shopping"></i>
+        <h3>YOUR SHOPPING BAG</h3>
+        <span class="cart-drawer-count" id="drawerCartCount">(0)</span>
+      </div>
+      <button class="close-drawer-btn" onclick="closeCart()" aria-label="Close cart">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Free Shipping Progress -->
+    <div class="cart-shipping-bar">
+      <span id="shippingProgressText">Add ₹2,499 more for Complimentary Shipping</span>
+      <div class="shipping-progress-track">
+        <div class="shipping-progress-fill" id="shippingProgressFill" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <div class="cart-items-list" id="cartItemsList">
+      <!-- Injected via JavaScript -->
+      <div class="cart-empty-state">
+        <i class="fa-solid fa-bag-shopping empty-cart-icon"></i>
+        <p>Your shopping bag is currently empty.</p>
+        <button class="btn btn-primary" onclick="closeCart(); location.href='#categories'">EXPLORE CREATIONS</button>
+      </div>
+    </div>
+
+    <div class="cart-drawer-footer" id="cartDrawerFooter">
+      <div class="cart-summary-row">
+        <span>Subtotal</span>
+        <span class="summary-subtotal" id="cartSubtotal">₹0</span>
+      </div>
+      <div class="cart-summary-row shipping-note">
+        <span>Taxes & Shipping</span>
+        <span>Calculated at checkout</span>
+      </div>
+      <button class="btn btn-primary checkout-btn" onclick="simulateCheckout()">PROCEED TO CHECKOUT</button>
+      <button class="btn btn-outline continue-shopping-btn" onclick="closeCart()">CONTINUE EXPLORING</button>
+    </div>
+  </aside>
+
+  <!-- 2. Request a Proposal Modal (Corporate / Wholesale) -->
+  <div class="modal-backdrop" id="proposalModal">
+    <div class="modal-dialog">
+      <button class="modal-close-btn" onclick="closeProposalModal()"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-header">
+        <span class="modal-eyebrow">VERDANTA WORLD B2B PARTNERSHIPS</span>
+        <h3 id="proposalModalTitle">Request a Corporate or Wholesale Proposal</h3>
+        <p>Share your requirement details below and our partnership team will send a tailored catalog & quote within 24 hours.</p>
+      </div>
+      <form class="modal-form" id="proposalForm" onsubmit="handleProposalSubmit(event)">
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="contactName">Full Name *</label>
+            <input type="text" id="contactName" required placeholder="e.g. Vikram Malhotra">
+          </div>
+          <div class="form-group">
+            <label for="companyName">Organization / Store Name *</label>
+            <input type="text" id="companyName" required placeholder="e.g. Zenith Global Pvt Ltd">
+          </div>
+        </div>
+
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="workEmail">Official Email *</label>
+            <input type="email" id="workEmail" required placeholder="vikram@company.com">
+          </div>
+          <div class="form-group">
+            <label for="phoneNumber">Contact Phone *</label>
+            <input type="tel" id="phoneNumber" required placeholder="+91 98765 43210">
+          </div>
+        </div>
+
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="partnershipType">Inquiry Type *</label>
+            <select id="partnershipType" required>
+              <option value="Occasion Kits">Corporate Gifting - Occasion Kits</option>
+              <option value="Executive Gifting">Corporate Gifting - Executive Gifting</option>
+              <option value="Bespoke Sourcing">Corporate Gifting - Bespoke Sourcing</option>
+              <option value="Branded Gifting">Corporate Gifting - Branded Gifting</option>
+              <option value="Employee Appreciation Gift Kit">Corporate Gifting - Employee Gifting</option>
+              <option value="Festive Gifting">Corporate Gifting - Festive Gifting</option>
+              <option value="Custom Gift Kits">Corporate Gifting - Custom Gift Kits</option>
+              <option value="ESG & Impact Gifting">Corporate Gifting - ESG / Impact Gifting</option>
+              <option value="Wholesale - Indian Boutiques">Wholesale - Indian Boutiques</option>
+              <option value="Wholesale - Gift Stores">Wholesale - Gift Stores</option>
+              <option value="Wholesale - Lifestyle">Wholesale - Lifestyle</option>
+              <option value="Wholesale - Retailers">Wholesale - Retailers</option>
+              <option value="Wholesale - Resellers">Wholesale - Resellers</option>
+              <option value="Export - International Retailers">Export - International Retailers</option>
+              <option value="Export - Distributors">Export - Distributors</option>
+              <option value="Export - Hospitality">Export - Hospitality</option>
+              <option value="Export - Lifestyle Brands">Export - Lifestyle Brands</option>
+              <option value="Personalization Gifting">Personalization & Monogram Bulk Orders</option>
+              <option value="General Inquiry">General B2B Inquiry</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="estimatedUnits">Estimated Quantity / Budget</label>
+            <input type="text" id="estimatedUnits" placeholder="e.g. 150 units / ₹2,50,000">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="projectNotes">Specific Requirements or Customization Notes</label>
+          <textarea id="projectNotes" rows="3" placeholder="Tell us about desired products, delivery timeline, branding requirements, etc."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeProposalModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">SUBMIT PROPOSAL REQUEST</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Download Catalogue Modal -->
+  <div class="modal-backdrop" id="catalogueModal">
+    <div class="modal-dialog">
+      <button class="modal-close-btn" onclick="closeCatalogueModal()"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-header">
+        <span class="modal-eyebrow">GLOBAL EXPORT & WHOLESALE</span>
+        <h3>Download Verdanta World Full Catalogues</h3>
+        <p>Access our high-resolution export sheets, material specifications, and wholesale pricing schedules.</p>
+      </div>
+      <div class="catalogue-options-list">
+        <div class="catalogue-item">
+          <div class="catalogue-icon"><i class="fa-solid fa-file-pdf"></i></div>
+          <div class="catalogue-info">
+            <strong>2026 Master Artisan & Home Décor Catalogue</strong>
+            <span>PDF • 48 Pages • High-Res Photos & Artisan Cluster Profiles</span>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="simulateDownload('Master_Artisan_Catalogue_2026.pdf')"><i class="fa-solid fa-download"></i> Download</button>
+        </div>
+        <div class="catalogue-item">
+          <div class="catalogue-icon"><i class="fa-solid fa-file-pdf"></i></div>
+          <div class="catalogue-info">
+            <strong>ESG Corporate Gifting & Customization Lookbook</strong>
+            <span>PDF • 24 Pages • Gift Kits, Seed Paper & Sustainable Hampers</span>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="simulateDownload('ESG_Corporate_Gifting_2026.pdf')"><i class="fa-solid fa-download"></i> Download</button>
+        </div>
+        <div class="catalogue-item">
+          <div class="catalogue-icon"><i class="fa-solid fa-file-pdf"></i></div>
+          <div class="catalogue-info">
+            <strong>Export & International Logistics Guide</strong>
+            <span>PDF • 18 Pages • FOB/CIF Pricing, MOQs, Packaging & Compliance</span>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="simulateDownload('Export_International_Logistics_Guide_2026.pdf')"><i class="fa-solid fa-download"></i> Download</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Schedule Showroom Visit Modal -->
+  <div class="modal-backdrop" id="visitModal">
+    <div class="modal-dialog">
+      <button class="modal-close-btn" onclick="closeVisitModal()"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-header">
+        <span class="modal-eyebrow">EXCLUSIVE ATELIER EXPERIENCE</span>
+        <h3>Schedule an In-Person Studio Visit</h3>
+        <p>Immerse yourself in live pottery wheels, wood carving demonstrations, and curated design consultations.</p>
+      </div>
+      <form class="modal-form" onsubmit="event.preventDefault(); alert('Your showroom appointment request has been scheduled! Our concierge will confirm your date via email.'); closeVisitModal();">
+        <div class="form-group-row">
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" required placeholder="Your full name">
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" required placeholder="+91 98765 43210">
+          </div>
+        </div>
+        <div class="form-group-row">
+          <div class="form-group">
+            <label>Location</label>
+            <select required>
+              <option value="jaipur">Jaipur Atelier & Craft Studio</option>
+              <option value="bangalore">Bangalore Experience Centre (Indiranagar)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Preferred Date</label>
+            <input type="date" required>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">CONFIRM APPOINTMENT</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Quick View Product Modal -->
+  <div class="modal-backdrop" id="quickViewModal">
+    <div class="modal-dialog modal-dialog-lg">
+      <button class="modal-close-btn" onclick="closeQuickView()"><i class="fa-solid fa-xmark"></i></button>
+      <div class="quick-view-grid" id="quickViewContent">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Search Bar Overlay -->
+  <div class="search-overlay" id="searchOverlay">
+    <div class="container search-container">
+      <div class="search-bar-wrap">
+        <i class="fa-solid fa-magnifying-glass search-input-icon"></i>
+        <input type="text" id="searchInput" placeholder="Search artisan lamps, terracotta, wooden clocks, ESG kits..." autofocus>
+        <button class="search-close-btn" onclick="closeSearch()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="search-suggestions">
+        <span>Popular:</span>
+        <button onclick="performSearch('Lamp')">Carved Wooden Lamp</button>
+        <button onclick="performSearch('Terracotta')">Terracotta Clay</button>
+        <button onclick="performSearch('Clock')">Wooden Clock</button>
+        <button onclick="performSearch('Tea Light')">Tea Light Candle</button>
+        <button onclick="performSearch('ESG')">ESG Gift Kit</button>
+        <button onclick="performSearch('Monogram')">Personalized Box</button>
+      </div>
+      <div class="search-results-grid" id="searchResultsGrid"></div>
+    </div>
+  </div>
+
+  <!-- 7. Customer Storefront Add Product Photo Modal -->
+  <div class="modal-backdrop" id="customerProductModal">
+    <div class="modal-dialog">
+      <button class="modal-close-btn" onclick="closeCustomerAddProductModal()"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-header">
+        <span class="modal-eyebrow">ARTISAN STOREFRONT MANAGER</span>
+        <h3>Add Product Photo to Storefront</h3>
+        <p>Upload a product photo, select its category, and publish it live directly into the customer dashboard.</p>
+      </div>
+
+      <form class="modal-form" id="customerProductForm" onsubmit="handleCustomerProductSubmit(event)">
+        <!-- Category & Subtitle Selection -->
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="custProdCategory">Main Category *</label>
+            <select id="custProdCategory" required onchange="handleCustomerCategoryChange(this.value)">
+              <!-- Populated dynamically via JS -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="custProdSubItem">Subtitle Category *</label>
+            <select id="custProdSubItem" onchange="handleCustomerSubCategoryChange(this.value)">
+              <!-- Populated dynamically via JS -->
+            </select>
+            <input type="text" id="custProdSubItemCustom" placeholder="Or type new subtitle..." style="display: none; margin-top: 6px;">
+          </div>
+        </div>
+
+        <!-- Product Name & Price -->
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="custProdTitle">Product Name *</label>
+            <input type="text" id="custProdTitle" required placeholder="e.g. Amber Glazed Ceramic Table Urn">
+          </div>
+          <div class="form-group">
+            <label for="custProdPrice">Price (₹ INR) (Optional)</label>
+            <input type="number" id="custProdPrice" min="0" placeholder="e.g. 3499">
+          </div>
+        </div>
+
+        <!-- Photo Upload Section -->
+        <div class="form-group" style="margin-top: 4px;">
+          <label style="font-weight: 700; color: var(--color-primary); font-size: 0.88rem; display: flex; justify-content: space-between;">
+            <span>Product Photo / Image *</span>
+            <span style="font-weight: normal; font-size: 0.76rem; color: #777;">File upload, URL, or craft preset</span>
+          </label>
+
+          <!-- Dropzone (Direct Click or Drag & Drop) -->
+          <div class="customer-photo-dropzone" id="custPhotoDropzone" ondragover="event.preventDefault(); this.style.borderColor='var(--color-gold)';" ondragleave="this.style.borderColor='';" ondrop="handleCustomerDropFile(event)" style="border: 2px dashed #cfc7b8; border-radius: 8px; padding: 20px; background: #faf8f5; text-align: center; margin-top: 6px;">
+            <input type="file" id="custFileInput" accept="image/*" style="display: none;" onchange="handleCustomerImageUpload(event)">
+            <div id="custDropzonePrompt" onclick="document.getElementById('custFileInput').click()" style="cursor: pointer;">
+              <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2.2rem; color: var(--color-gold); margin-bottom: 8px;"></i>
+              <strong style="display: block; font-size: 1rem; color: var(--color-primary);">Click to Upload Photo from Your Device</strong>
+              <span style="display: block; font-size: 0.78rem; color: #777; margin-top: 3px;">Or drag & drop photo directly here (JPG, PNG, WEBP)</span>
+              <button type="button" class="btn btn-sm btn-primary" style="margin-top: 10px; padding: 8px 18px; font-size: 0.8rem; background: var(--color-gold); font-weight: 700;">
+                <i class="fa-solid fa-folder-open"></i> Choose Photo File
+              </button>
+            </div>
+
+            <!-- Live Photo Preview -->
+            <div id="custPhotoPreviewWrap" style="display: none; flex-direction: column; align-items: center; gap: 10px;">
+              <div style="position: relative; max-width: 280px; width: 100%; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.12);">
+                <img id="custPhotoPreviewImg" src="" alt="Selected Preview" style="width: 100%; height: 160px; object-fit: cover;">
+                <span id="custPreviewSourceTag" style="position: absolute; bottom: 8px; left: 8px; background: rgba(30, 55, 43, 0.85); color: #fff; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; font-weight: 600;">Photo Selected</span>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-sm" onclick="document.getElementById('custFileInput').click()" style="background: #fff; border: 1px solid #ccc; font-size: 0.78rem; padding: 6px 14px; font-weight: 600;">
+                  <i class="fa-solid fa-camera-rotate"></i> Change Photo
+                </button>
+                <button type="button" class="btn btn-sm" onclick="removeCustomerUploadedImage()" style="background: #fff; border: 1px solid #e53e3e; color: #e53e3e; font-size: 0.78rem; padding: 6px 14px; font-weight: 600;">
+                  <i class="fa-solid fa-trash-can"></i> Remove
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <input type="hidden" id="custProdCustomImage" value="">
+
+          <!-- Quick Presets -->
+          <div style="margin-top: 14px;">
+            <label style="font-size: 0.78rem; font-weight: 600; color: #6e685f; display: block; margin-bottom: 6px;">Or Pick from Curated Craft Gallery (12 Real Photos):</label>
+            <div class="cust-preset-picker" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+              <label class="img-preset-item" style="border: 1px solid #e0dbd0; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; background: #fff;">
+                <input type="radio" name="custImgPreset" value="images/artisan-gallery.jpg" onchange="handleCustomerPresetSelect(this.value)">
+                <img src="images/artisan-gallery.jpg" alt="Pottery" style="width: 100%; height: 42px; object-fit: cover; border-radius: 4px; margin-top: 3px;">
+                <span style="font-size: 0.68rem; font-weight: 600; display: block; margin-top: 2px;">Pottery</span>
+              </label>
+              <label class="img-preset-item" style="border: 1px solid #e0dbd0; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; background: #fff;">
+                <input type="radio" name="custImgPreset" value="images/wooden-gallery.jpg" onchange="handleCustomerPresetSelect(this.value)">
+                <img src="images/wooden-gallery.jpg" alt="Wooden" style="width: 100%; height: 42px; object-fit: cover; border-radius: 4px; margin-top: 3px;">
+                <span style="font-size: 0.68rem; font-weight: 600; display: block; margin-top: 2px;">Wooden</span>
+              </label>
+              <label class="img-preset-item" style="border: 1px solid #e0dbd0; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; background: #fff;">
+                <input type="radio" name="custImgPreset" value="images/terracotta-pot.jpg" onchange="handleCustomerPresetSelect(this.value)">
+                <img src="images/terracotta-pot.jpg" alt="Clay" style="width: 100%; height: 42px; object-fit: cover; border-radius: 4px; margin-top: 3px;">
+                <span style="font-size: 0.68rem; font-weight: 600; display: block; margin-top: 2px;">Clay Pot</span>
+              </label>
+              <label class="img-preset-item" style="border: 1px solid #e0dbd0; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; background: #fff;">
+                <input type="radio" name="custImgPreset" value="images/grass-basket.jpg" onchange="handleCustomerPresetSelect(this.value)">
+                <img src="images/grass-basket.jpg" alt="Grass" style="width: 100%; height: 42px; object-fit: cover; border-radius: 4px; margin-top: 3px;">
+                <span style="font-size: 0.68rem; font-weight: 600; display: block; margin-top: 2px;">Basket</span>
+              </label>
+              <label class="img-preset-item" style="border: 1px solid #e0dbd0; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; background: #fff;">
+                <input type="radio" name="custImgPreset" value="images/hero.jpg" onchange="handleCustomerPresetSelect(this.value)">
+                <img src="images/hero.jpg" alt="Lamp" style="width: 100%; height: 42px; object-fit: cover; border-radius: 4px; margin-top: 3px;">
+                <span style="font-size: 0.68rem; font-weight: 600; display: block; margin-top: 2px;">Lamp</span>
+              </label>
+              <label class="img-preset-item" style="border: 1px solid #e0dbd0; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; background: #fff;">
+                <input type="radio" name="custImgPreset" value="images/premium-decor.jpg" onchange="handleCustomerPresetSelect(this.value)">
+                <img src="images/premium-decor.jpg" alt="Decor" style="width: 100%; height: 42px; object-fit: cover; border-radius: 4px; margin-top: 3px;">
+                <span style="font-size: 0.68rem; font-weight: 600; display: block; margin-top: 2px;">Decor</span>
+              </label>
+              <label class="img-preset-item" style="border: 1px solid #e0dbd0; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; background: #fff;">
+                <input type="radio" name="custImgPreset" value="images/personalization.jpg" onchange="handleCustomerPresetSelect(this.value)">
+                <img src="images/personalization.jpg" alt="Keepsake" style="width: 100%; height: 42px; object-fit: cover; border-radius: 4px; margin-top: 3px;">
+                <span style="font-size: 0.68rem; font-weight: 600; display: block; margin-top: 2px;">Keepsake</span>
+              </label>
+              <label class="img-preset-item" style="border: 1px solid #e0dbd0; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; background: #fff;">
+                <input type="radio" name="custImgPreset" value="images/esg-corporate.jpg" onchange="handleCustomerPresetSelect(this.value)">
+                <img src="images/esg-corporate.jpg" alt="ESG" style="width: 100%; height: 42px; object-fit: cover; border-radius: 4px; margin-top: 3px;">
+                <span style="font-size: 0.68rem; font-weight: 600; display: block; margin-top: 2px;">ESG Box</span>
+              </label>
+              <label class="img-preset-item" style="border: 1px solid #e0dbd0; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; background: #fff;">
+                <input type="radio" name="custImgPreset" value="images/corporate-lifestyle.jpg" onchange="handleCustomerPresetSelect(this.value)">
+                <img src="images/corporate-lifestyle.jpg" alt="Corporate" style="width: 100%; height: 42px; object-fit: cover; border-radius: 4px; margin-top: 3px;">
+                <span style="font-size: 0.68rem; font-weight: 600; display: block; margin-top: 2px;">Corporate</span>
+              </label>
+              <label class="img-preset-item" style="border: 1px solid #e0dbd0; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; background: #fff;">
+                <input type="radio" name="custImgPreset" value="images/global-sourcing.jpg" onchange="handleCustomerPresetSelect(this.value)">
+                <img src="images/global-sourcing.jpg" alt="Export" style="width: 100%; height: 42px; object-fit: cover; border-radius: 4px; margin-top: 3px;">
+                <span style="font-size: 0.68rem; font-weight: 600; display: block; margin-top: 2px;">Export</span>
+              </label>
+              <label class="img-preset-item" style="border: 1px solid #e0dbd0; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; background: #fff;">
+                <input type="radio" name="custImgPreset" value="images/wholesale.jpg" onchange="handleCustomerPresetSelect(this.value)">
+                <img src="images/wholesale.jpg" alt="Wholesale" style="width: 100%; height: 42px; object-fit: cover; border-radius: 4px; margin-top: 3px;">
+                <span style="font-size: 0.68rem; font-weight: 600; display: block; margin-top: 2px;">Wholesale</span>
+              </label>
+              <label class="img-preset-item" style="border: 1px solid #e0dbd0; border-radius: 6px; padding: 5px; text-align: center; cursor: pointer; background: #fff;">
+                <input type="radio" name="custImgPreset" value="images/sustainability-crafts.jpg" onchange="handleCustomerPresetSelect(this.value)">
+                <img src="images/sustainability-crafts.jpg" alt="Eco" style="width: 100%; height: 42px; object-fit: cover; border-radius: 4px; margin-top: 3px;">
+                <span style="font-size: 0.68rem; font-weight: 600; display: block; margin-top: 2px;">Eco Crafts</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Badge & Extra fields -->
+        <div class="form-group-row" style="margin-top: 14px;">
+          <div class="form-group">
+            <label for="custProdBadge">Badge / Tag (Optional)</label>
+            <select id="custProdBadge">
+              <option value="Artisan Signature">Artisan Signature</option>
+              <option value="Bestseller">Bestseller</option>
+              <option value="New Arrival">New Arrival</option>
+              <option value="Eco Certified">Eco Certified</option>
+              <option value="Limited Edition">Limited Edition</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="custProdOrigin">Craft Origin (Optional)</label>
+            <input type="text" id="custProdOrigin" placeholder="e.g. Saharanpur, UP / Jaipur">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="custProdDescription">Description (Optional)</label>
+          <textarea id="custProdDescription" rows="2" placeholder="Brief notes on craftsmanship, materials, dimensions..."></textarea>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeCustomerAddProductModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveCustProductBtn" style="background: var(--color-gold); font-weight: 700;">
+            <i class="fa-solid fa-sparkles"></i> Publish Product to Live Storefront
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div class="toast-notification" id="toastNotification">
+    <i class="fa-solid fa-check-circle toast-icon"></i>
+    <span id="toastMessage">Item added to your shopping bag</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
