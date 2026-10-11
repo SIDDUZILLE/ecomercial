@@ -1140,17 +1140,26 @@
           </div>
         </div>
 
-        <!-- Product Name & Price -->
-        <div class="form-group-row">
+        <!-- Product Name -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="custProdTitle">Product Name *</label>
+          <input type="text" id="custProdTitle" required placeholder="e.g. Amber Glazed Ceramic Table Urn">
+        </div>
+
+        <!-- MRP & Discount Price -->
+        <div class="form-group-row pricing-form-row">
           <div class="form-group">
-            <label for="custProdTitle">Product Name *</label>
-            <input type="text" id="custProdTitle" required placeholder="e.g. Amber Glazed Ceramic Table Urn">
+            <label for="custProdMrp">MRP (₹ INR) <span style="font-size: 0.75rem; color: #777;">(Optional)</span></label>
+            <input type="number" id="custProdMrp" min="0" placeholder="e.g. 3999" oninput="calculateDiscountPreview('cust')">
+            <span style="font-size: 0.72rem; color: #888; margin-top: 3px;">Original / Maximum Retail Price</span>
           </div>
           <div class="form-group">
-            <label for="custProdPrice">Price (₹ INR) (Optional)</label>
-            <input type="number" id="custProdPrice" min="0" placeholder="e.g. 3499">
+            <label for="custProdPrice">Discount Price (₹ INR) <span style="font-size: 0.75rem; color: #777;">(Optional)</span></label>
+            <input type="number" id="custProdPrice" min="0" placeholder="e.g. 2999" oninput="calculateDiscountPreview('cust')">
+            <span style="font-size: 0.72rem; color: #888; margin-top: 3px;">Offer / Selling Price</span>
           </div>
         </div>
+        <div id="custDiscountSavings" class="discount-savings-calc" style="display: none; margin-bottom: 14px;"></div>
 
         <!-- Photo Upload Section -->
         <div class="form-group" style="margin-top: 4px;">

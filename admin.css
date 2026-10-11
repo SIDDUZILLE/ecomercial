@@ -1848,3 +1848,66 @@ input, select, textarea {
   border: 1px solid #ddd6fe;
 }
 
+/* Pricing & Discount Styles */
+.pricing-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.field-sub-hint {
+  font-size: 0.74rem;
+  color: #8c827a;
+  margin-top: 4px;
+}
+
+.discount-savings-calc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.84rem;
+  margin-bottom: 16px;
+  animation: fadeIn 0.25s ease;
+}
+
+.pricing-preview-success {
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  color: #1b5e20;
+}
+
+.pricing-preview-warning {
+  background: #fff3e0;
+  border: 1px solid #ffcc80;
+  color: #b75300;
+}
+
+.admin-prod-price-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 8px;
+}
+
+.admin-prod-mrp {
+  font-size: 0.8rem;
+  color: #8c827a;
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+.admin-prod-discount-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #1b5e20;
+  background-color: #e8f5e9;
+  border: 1px solid #c8e6c9;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+

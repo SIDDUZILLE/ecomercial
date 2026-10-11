@@ -326,17 +326,26 @@
         <input type="hidden" id="prodSubItemHidden">
 
 
-        <!-- Product Name (Mandatory) & Price (Optional) -->
-        <div class="form-row">
+        <!-- Product Name (Mandatory) -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="prodTitle">Product Name <span class="required-star">*</span></label>
+          <input type="text" id="prodTitle" required placeholder="e.g. Ambient Brass & Teak Table Lamp">
+        </div>
+
+        <!-- MRP & Discount Price (Both Optional) -->
+        <div class="form-row pricing-form-row">
           <div class="form-group">
-            <label for="prodTitle">Product Name <span class="required-star">*</span></label>
-            <input type="text" id="prodTitle" required placeholder="e.g. Ambient Brass & Teak Table Lamp">
+            <label for="prodMrp">MRP (₹ INR) <span class="optional-tag">(Optional)</span></label>
+            <input type="number" id="prodMrp" min="0" placeholder="e.g. 3999" oninput="calculateDiscountPreview('admin')">
+            <span class="field-sub-hint">Original / Maximum Retail Price</span>
           </div>
           <div class="form-group">
-            <label for="prodPrice">Price (₹ INR) <span class="optional-tag">(Optional)</span></label>
-            <input type="number" id="prodPrice" min="0" placeholder="e.g. 3200">
+            <label for="prodPrice">Discount Price (₹ INR) <span class="optional-tag">(Optional)</span></label>
+            <input type="number" id="prodPrice" min="0" placeholder="e.g. 2999" oninput="calculateDiscountPreview('admin')">
+            <span class="field-sub-hint">Offer / Selling Price (Customer pays)</span>
           </div>
         </div>
+        <div id="adminDiscountSavings" class="discount-savings-calc" style="display: none;"></div>
 
         <!-- Product Image (Mandatory) with Direct Device File Upload, Live Preview, Custom URL & Presets -->
         <div class="form-group photo-upload-group">

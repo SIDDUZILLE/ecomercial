@@ -337,6 +337,8 @@ const SEED_PRODUCTS = [
     subItem: 'Lamp',
     name: 'Carved Teak & Linen Artisan Table Lamp',
     title: 'Carved Teak & Linen Artisan Table Lamp',
+    mrp: 5999,
+    mrpFormatted: '₹5,999',
     price: 4899,
     priceFormatted: '₹4,899',
     badge: 'Artisan Signature',
@@ -353,6 +355,8 @@ const SEED_PRODUCTS = [
     subItem: 'Terracotta Clay',
     name: 'Heritage Peacock Handpainted Terracotta Urn',
     title: 'Heritage Peacock Handpainted Terracotta Urn',
+    mrp: 2999,
+    mrpFormatted: '₹2,999',
     price: 2450,
     priceFormatted: '₹2,450',
     badge: 'Bestseller',
@@ -369,6 +373,8 @@ const SEED_PRODUCTS = [
     subItem: 'Natural Grass and Handwoven Gallery',
     name: 'Sabai Grass Lidded Handwoven Basket',
     title: 'Sabai Grass Lidded Handwoven Basket',
+    mrp: 2200,
+    mrpFormatted: '₹2,200',
     price: 1850,
     priceFormatted: '₹1,850',
     badge: 'Eco Certified',
@@ -385,6 +391,8 @@ const SEED_PRODUCTS = [
     subItem: 'Clock',
     name: 'Artisanal Carved Teakwood Desk Clock',
     title: 'Artisanal Carved Teakwood Desk Clock',
+    mrp: 3999,
+    mrpFormatted: '₹3,999',
     price: 3200,
     priceFormatted: '₹3,200',
     badge: 'Limited Edition',
@@ -401,6 +409,8 @@ const SEED_PRODUCTS = [
     subItem: 'Key Chain',
     name: 'Hand-Carved Wooden Elephant & Leather Keychain',
     title: 'Hand-Carved Wooden Elephant & Leather Keychain',
+    mrp: 650,
+    mrpFormatted: '₹650',
     price: 490,
     priceFormatted: '₹490',
     badge: 'Craft Accessory',
@@ -417,6 +427,8 @@ const SEED_PRODUCTS = [
     subItem: 'Toys',
     name: 'Traditional Handpainted Wooden Bird Figurine',
     title: 'Traditional Handpainted Wooden Bird Figurine',
+    mrp: 1250,
+    mrpFormatted: '₹1,250',
     price: 950,
     priceFormatted: '₹950',
     badge: 'Generational Craft',
@@ -433,6 +445,8 @@ const SEED_PRODUCTS = [
     subItem: 'Tea Light Candle',
     name: 'Turned Rosewood Tea Light Candle Holder',
     title: 'Turned Rosewood Tea Light Candle Holder',
+    mrp: 990,
+    mrpFormatted: '₹990',
     price: 750,
     priceFormatted: '₹750',
     badge: 'Warm Ambiance',
@@ -830,11 +844,24 @@ function normalizeProduct(p) {
   p.category = cat.name;
   if (!p.title && p.name) p.title = p.name;
   if (!p.name && p.title) p.name = p.title;
+  if (p.mrp !== undefined && p.mrp !== null && p.mrp !== '') {
+    p.mrp = Number(p.mrp);
+    p.mrpFormatted = p.mrp > 0 ? '₹' + p.mrp.toLocaleString('en-IN') : null;
+  } else {
+    p.mrp = null;
+    p.mrpFormatted = null;
+  }
   if (!p.priceFormatted) {
     p.priceFormatted = (p.price && p.price > 0) ? '₹' + Number(p.price).toLocaleString('en-IN') : '₹0';
   }
+  if (p.mrp && p.mrp > (p.price || 0) && p.price > 0) {
+    p.discountPercent = Math.round(((p.mrp - p.price) / p.mrp) * 100);
+  } else {
+    p.discountPercent = 0;
+  }
   return p;
 }
+
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -1376,6 +1403,10 @@ function renderCategoryProductSections(searchQuery = '') {
                             <h4 class="admin-prod-title">${escapeHtml(prod.title || prod.name)}</h4>
                             <div class="admin-prod-price-row">
                               <span class="admin-prod-price">${prod.priceFormatted || (prod.price > 0 ? '₹' + Number(prod.price).toLocaleString('en-IN') : '₹0')}</span>
+                              ${(prod.mrp && prod.mrp > (prod.price || 0)) ? `
+                                <span class="admin-prod-mrp">₹${Number(prod.mrp).toLocaleString('en-IN')}</span>
+                                <span class="admin-prod-discount-badge">${Math.round(((prod.mrp - (prod.price || 0)) / prod.mrp) * 100)}% OFF</span>
+                              ` : ''}
                               ${prod.origin ? `<span class="admin-prod-origin"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(prod.origin)}</span>` : ''}
                             </div>
                             ${prod.description ? `<p class="admin-prod-desc-snippet">${escapeHtml(prod.description)}</p>` : ''}
@@ -1498,6 +1529,11 @@ window.openAddProductModalForCategory = function(categoryId, subCategoryName = '
   document.getElementById('prodCategoryId').value = cat.id;
   document.getElementById('prodCategory').value = cat.name;
 
+  // Reset pricing and discount calculation
+  if (document.getElementById('prodMrp')) document.getElementById('prodMrp').value = '';
+  if (document.getElementById('prodPrice')) document.getElementById('prodPrice').value = '';
+  calculateDiscountPreview('admin');
+
   // Determine target subtitle category
   const activeSubName = subCategoryName || (cat.subCategories && cat.subCategories[0]) || 'Featured Creations';
   document.getElementById('prodSubItem').value = activeSubName;
@@ -1558,7 +1594,12 @@ window.editProduct = function(productId) {
   document.getElementById('prodCategory').value = cat ? cat.name : (prod.category || 'Artisan Gallery');
 
   document.getElementById('prodTitle').value = prod.title || prod.name || '';
-  document.getElementById('prodPrice').value = (prod.price !== undefined && prod.price !== null) ? prod.price : '';
+  document.getElementById('prodPrice').value = (prod.price !== undefined && prod.price !== null && prod.price > 0) ? prod.price : '';
+  if (document.getElementById('prodMrp')) {
+    document.getElementById('prodMrp').value = (prod.mrp !== undefined && prod.mrp !== null && prod.mrp > 0) ? prod.mrp : '';
+  }
+  calculateDiscountPreview('admin');
+
   document.getElementById('prodSubItem').value = currentSub;
   const hiddenSub = document.getElementById('prodSubItemHidden');
   if (hiddenSub) hiddenSub.value = currentSub;
@@ -1597,6 +1638,35 @@ window.closeProductModal = function() {
   document.getElementById('productModal').classList.remove('active');
 };
 
+// Real-time calculation of discount percentage and rupee savings
+window.calculateDiscountPreview = function(context = 'admin') {
+  const mrpInput = document.getElementById(context === 'admin' ? 'prodMrp' : 'custProdMrp');
+  const priceInput = document.getElementById(context === 'admin' ? 'prodPrice' : 'custProdPrice');
+  const badgeEl = document.getElementById(context === 'admin' ? 'adminDiscountSavings' : 'custDiscountSavings');
+  if (!mrpInput || !priceInput || !badgeEl) return;
+
+  const mrp = parseFloat(mrpInput.value) || 0;
+  const price = parseFloat(priceInput.value) || 0;
+
+  if (mrp > 0 && price > 0) {
+    if (price < mrp) {
+      const savings = mrp - price;
+      const pct = Math.round((savings / mrp) * 100);
+      badgeEl.className = 'discount-savings-calc pricing-preview-success';
+      badgeEl.style.display = 'flex';
+      badgeEl.innerHTML = `<i class="fa-solid fa-tags"></i> <span><strong>${pct}% OFF</strong> — Customer saves ₹${savings.toLocaleString('en-IN')}</span>`;
+    } else if (price > mrp) {
+      badgeEl.className = 'discount-savings-calc pricing-preview-warning';
+      badgeEl.style.display = 'flex';
+      badgeEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <span>Note: Discount Price (₹${price.toLocaleString('en-IN')}) is higher than MRP (₹${mrp.toLocaleString('en-IN')}).</span>`;
+    } else {
+      badgeEl.style.display = 'none';
+    }
+  } else {
+    badgeEl.style.display = 'none';
+  }
+};
+
 // Handle Add / Edit Submission
 window.handleProductSubmit = function(event) {
   event.preventDefault();
@@ -1611,8 +1681,12 @@ window.handleProductSubmit = function(event) {
     category = foundCat.name;
   }
 
+  const mrpVal = document.getElementById('prodMrp') ? document.getElementById('prodMrp').value : '';
+  const mrp = mrpVal !== '' ? parseInt(mrpVal, 10) : null;
+
   const priceVal = document.getElementById('prodPrice').value;
-  const price = priceVal !== '' ? parseInt(priceVal, 10) : 0;
+  const price = priceVal !== '' ? parseInt(priceVal, 10) : (mrp !== null ? mrp : 0);
+  const discountPercent = (mrp && mrp > price && price > 0) ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
   const subSelect = document.getElementById('prodSubItemSelect');
   const customInput = document.getElementById('prodSubItemCustom');
@@ -1640,9 +1714,6 @@ window.handleProductSubmit = function(event) {
   const description = document.getElementById('prodDescription').value.trim();
 
   // Determine final image source:
-  // 1. Uploaded File (Base64 data URL)
-  // 2. Custom Image URL/Path
-  // 3. Selected Preset Radio
   let image = uploadedPhotoDataUrl || '';
   if (!image) {
     const customImg = document.getElementById('prodCustomImage').value.trim();
@@ -1665,7 +1736,10 @@ window.handleProductSubmit = function(event) {
         categoryId: categoryId || adminProducts[index].categoryId,
         category: category || adminProducts[index].category,
         subItem: subItem,
+        mrp: mrp,
+        mrpFormatted: mrp > 0 ? '₹' + mrp.toLocaleString('en-IN') : null,
         price: price,
+        discountPercent: discountPercent,
         priceFormatted: price > 0 ? '₹' + price.toLocaleString('en-IN') : '₹0',
         badge: badge,
         image: image,
@@ -1674,7 +1748,7 @@ window.handleProductSubmit = function(event) {
         description: description,
         updatedAt: new Date().toISOString()
       };
-      showToast(`Photo for "${title}" updated successfully! Synchronized with storefront.`);
+      showToast(`Photo and pricing for "${title}" updated successfully! Synchronized with storefront.`);
     }
   } else {
     // Add new product assigned to categoryId and subItem
@@ -1685,7 +1759,10 @@ window.handleProductSubmit = function(event) {
       categoryId: categoryId,
       category: category,
       subItem: subItem,
+      mrp: mrp,
+      mrpFormatted: mrp > 0 ? '₹' + mrp.toLocaleString('en-IN') : null,
       price: price,
+      discountPercent: discountPercent,
       priceFormatted: price > 0 ? '₹' + price.toLocaleString('en-IN') : '₹0',
       badge: badge,
       image: image,

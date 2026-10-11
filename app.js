@@ -390,8 +390,20 @@ function normalizeProduct(p) {
   p.category = cat.name;
   if (!p.title && p.name) p.title = p.name;
   if (!p.name && p.title) p.name = p.title;
+  if (p.mrp !== undefined && p.mrp !== null && p.mrp !== '') {
+    p.mrp = Number(p.mrp);
+    p.mrpFormatted = p.mrp > 0 ? '₹' + p.mrp.toLocaleString('en-IN') : null;
+  } else {
+    p.mrp = null;
+    p.mrpFormatted = null;
+  }
   if (!p.priceFormatted) {
     p.priceFormatted = (p.price && p.price > 0) ? '₹' + Number(p.price).toLocaleString('en-IN') : '₹0';
+  }
+  if (p.mrp && p.mrp > (p.price || 0) && p.price > 0) {
+    p.discountPercent = Math.round(((p.mrp - p.price) / p.mrp) * 100);
+  } else {
+    p.discountPercent = 0;
   }
   return p;
 }
@@ -405,6 +417,8 @@ const DEFAULT_PRODUCTS = [
     subItem: 'Lamp',
     name: 'Carved Teak & Linen Artisan Table Lamp',
     title: 'Carved Teak & Linen Artisan Table Lamp',
+    mrp: 5999,
+    mrpFormatted: '₹5,999',
     price: 4899,
     priceFormatted: '₹4,899',
     badge: 'Artisan Signature',
@@ -421,6 +435,8 @@ const DEFAULT_PRODUCTS = [
     subItem: 'Terracotta Clay',
     name: 'Heritage Peacock Handpainted Terracotta Urn',
     title: 'Heritage Peacock Handpainted Terracotta Urn',
+    mrp: 2999,
+    mrpFormatted: '₹2,999',
     price: 2450,
     priceFormatted: '₹2,450',
     badge: 'Bestseller',
@@ -437,6 +453,8 @@ const DEFAULT_PRODUCTS = [
     subItem: 'Natural Grass and Handwoven Gallery',
     name: 'Sabai Grass Lidded Handwoven Basket',
     title: 'Sabai Grass Lidded Handwoven Basket',
+    mrp: 2200,
+    mrpFormatted: '₹2,200',
     price: 1850,
     priceFormatted: '₹1,850',
     badge: 'Eco Certified',
@@ -455,6 +473,8 @@ const DEFAULT_PRODUCTS = [
     subItem: 'Clock',
     name: 'Artisanal Carved Teakwood Desk Clock',
     title: 'Artisanal Carved Teakwood Desk Clock',
+    mrp: 3999,
+    mrpFormatted: '₹3,999',
     price: 3200,
     priceFormatted: '₹3,200',
     badge: 'Limited Edition',
@@ -471,6 +491,8 @@ const DEFAULT_PRODUCTS = [
     subItem: 'Key Chain',
     name: 'Hand-Carved Wooden Elephant & Leather Keychain',
     title: 'Hand-Carved Wooden Elephant & Leather Keychain',
+    mrp: 650,
+    mrpFormatted: '₹650',
     price: 490,
     priceFormatted: '₹490',
     badge: 'Craft Accessory',
@@ -487,6 +509,8 @@ const DEFAULT_PRODUCTS = [
     subItem: 'Toys',
     name: 'Traditional Handpainted Wooden Bird Figurine',
     title: 'Traditional Handpainted Wooden Bird Figurine',
+    mrp: 1250,
+    mrpFormatted: '₹1,250',
     price: 950,
     priceFormatted: '₹950',
     badge: 'Generational Craft',
@@ -503,6 +527,8 @@ const DEFAULT_PRODUCTS = [
     subItem: 'Tea Light Candle',
     name: 'Turned Rosewood Tea Light Candle Holder',
     title: 'Turned Rosewood Tea Light Candle Holder',
+    mrp: 990,
+    mrpFormatted: '₹990',
     price: 750,
     priceFormatted: '₹750',
     badge: 'Warm Ambiance',
@@ -1046,11 +1072,15 @@ function setupHeaderScrollEffect() {
 // =============================================================================
 
 function renderProductCardHtml(product) {
+  const hasDiscount = Boolean(product.mrp && product.mrp > (product.price || 0) && product.price > 0);
+  const discountPct = hasDiscount ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
+
   return `
     <article class="product-card" id="card-${product.id}">
       <div class="product-img-box">
         <img src="${product.image}" alt="${escapeHtml(product.title || product.name)}" class="product-img" loading="lazy" onerror="this.src='images/wooden-gallery.jpg'">
         <span class="product-badge">${escapeHtml(product.badge || 'Artisan Creation')}</span>
+        ${hasDiscount ? `<span class="product-discount-ribbon">${discountPct}% OFF</span>` : ''}
         <div class="product-quick-actions">
           <button class="quick-action-btn" onclick="openQuickView('${product.id}')">
             <i class="fa-regular fa-eye"></i> QUICK VIEW
@@ -1065,7 +1095,13 @@ function renderProductCardHtml(product) {
         <h4 class="product-title">${escapeHtml(product.title || product.name)}</h4>
         ${product.subItem ? `<span class="product-sub-item-tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(product.subItem)}</span>` : ''}
         <div class="product-price-row">
-          <span class="product-price">${product.priceFormatted || '₹' + (product.price || 0).toLocaleString('en-IN')}</span>
+          <div class="product-price-block">
+            <span class="product-price">${product.priceFormatted || '₹' + (product.price || 0).toLocaleString('en-IN')}</span>
+            ${hasDiscount ? `
+              <span class="product-mrp-price">₹${Number(product.mrp).toLocaleString('en-IN')}</span>
+              <span class="product-discount-tag">${discountPct}% OFF</span>
+            ` : ''}
+          </div>
           <button class="add-cart-mini-btn" onclick="addToCart('${product.id}')" title="Add to bag">
             <i class="fa-solid fa-bag-shopping"></i>
           </button>
@@ -1418,6 +1454,10 @@ window.openQuickView = function(productId) {
   const product = PRODUCTS_DATA.find(p => p.id === productId);
   if (!product) return;
 
+  const hasDiscount = Boolean(product.mrp && product.mrp > (product.price || 0) && product.price > 0);
+  const discountPct = hasDiscount ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
+  const savingsAmount = hasDiscount ? (product.mrp - product.price) : 0;
+
   const content = document.getElementById('quickViewContent');
   content.innerHTML = `
     <div>
@@ -1426,7 +1466,14 @@ window.openQuickView = function(productId) {
     <div class="quick-view-details">
       <span class="modal-eyebrow">${product.category} • ${product.subItem}</span>
       <h2>${product.title}</h2>
-      <div class="quick-view-price">${product.priceFormatted}</div>
+      <div class="quick-view-price-wrap">
+        <span class="quick-view-price">${product.priceFormatted}</span>
+        ${hasDiscount ? `
+          <span class="quick-view-mrp">₹${Number(product.mrp).toLocaleString('en-IN')}</span>
+          <span class="quick-view-discount-pill">${discountPct}% OFF</span>
+          <span class="quick-view-savings-text"><i class="fa-solid fa-tag"></i> Save ₹${savingsAmount.toLocaleString('en-IN')}</span>
+        ` : ''}
+      </div>
       <p style="color: var(--color-text-muted); font-size: 0.95rem; line-height: 1.7;">${product.description}</p>
       
       <div class="quick-view-specs">
@@ -1668,6 +1715,10 @@ window.openCustomerAddProductModal = function(preselectedCatId = '') {
   const urlInput = document.getElementById('custProdCustomImage');
   if (urlInput) urlInput.value = '';
 
+  if (document.getElementById('custProdMrp')) document.getElementById('custProdMrp').value = '';
+  if (document.getElementById('custProdPrice')) document.getElementById('custProdPrice').value = '';
+  if (typeof calculateDiscountPreview === 'function') calculateDiscountPreview('cust');
+
   // Populate category dropdown
   const catSelect = document.getElementById('custProdCategory');
   if (catSelect) {
@@ -1830,6 +1881,34 @@ window.removeCustomerUploadedImage = function() {
   }
 };
 
+window.calculateDiscountPreview = function(context = 'cust') {
+  const mrpInput = document.getElementById(context === 'admin' ? 'prodMrp' : 'custProdMrp');
+  const priceInput = document.getElementById(context === 'admin' ? 'prodPrice' : 'custProdPrice');
+  const badgeEl = document.getElementById(context === 'admin' ? 'adminDiscountSavings' : 'custDiscountSavings');
+  if (!mrpInput || !priceInput || !badgeEl) return;
+
+  const mrp = parseFloat(mrpInput.value) || 0;
+  const price = parseFloat(priceInput.value) || 0;
+
+  if (mrp > 0 && price > 0) {
+    if (price < mrp) {
+      const savings = mrp - price;
+      const pct = Math.round((savings / mrp) * 100);
+      badgeEl.className = 'discount-savings-calc pricing-preview-success';
+      badgeEl.style.display = 'flex';
+      badgeEl.innerHTML = `<i class="fa-solid fa-tags"></i> <span><strong>${pct}% OFF</strong> — Customer saves ₹${savings.toLocaleString('en-IN')}</span>`;
+    } else if (price > mrp) {
+      badgeEl.className = 'discount-savings-calc pricing-preview-warning';
+      badgeEl.style.display = 'flex';
+      badgeEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <span>Note: Discount Price (₹${price.toLocaleString('en-IN')}) is higher than MRP (₹${mrp.toLocaleString('en-IN')}).</span>`;
+    } else {
+      badgeEl.style.display = 'none';
+    }
+  } else {
+    badgeEl.style.display = 'none';
+  }
+};
+
 window.handleCustomerProductSubmit = function(event) {
   event.preventDefault();
 
@@ -1838,8 +1917,12 @@ window.handleCustomerProductSubmit = function(event) {
   const categoryObj = getCategoryById(categoryId);
   const category = categoryObj.name;
 
+  const mrpVal = document.getElementById('custProdMrp') ? document.getElementById('custProdMrp').value : '';
+  const mrp = mrpVal !== '' ? parseInt(mrpVal, 10) : null;
+
   const priceVal = document.getElementById('custProdPrice').value;
-  const price = priceVal !== '' ? parseInt(priceVal, 10) : 0;
+  const price = priceVal !== '' ? parseInt(priceVal, 10) : (mrp !== null ? mrp : 0);
+  const discountPercent = (mrp && mrp > price && price > 0) ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
   const subSelect = document.getElementById('custProdSubItem');
   const customInput = document.getElementById('custProdSubItemCustom');
@@ -1883,7 +1966,10 @@ window.handleCustomerProductSubmit = function(event) {
     categoryId: categoryId,
     category: category,
     subItem: subItem,
+    mrp: mrp,
+    mrpFormatted: mrp > 0 ? '₹' + mrp.toLocaleString('en-IN') : null,
     price: price,
+    discountPercent: discountPercent,
     priceFormatted: price > 0 ? '₹' + price.toLocaleString('en-IN') : '₹0',
     badge: badge,
     image: image,
