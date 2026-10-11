@@ -851,7 +851,7 @@ function normalizeProduct(p) {
   if (p.mrp !== undefined && p.mrp !== null && p.mrp !== '' && Number(p.mrp) > p.price) {
     p.mrp = Number(p.mrp);
   } else if (p.price > 0) {
-    let autoMrp = Math.round((p.price * 1.25) / 50) * 50;
+    let autoMrp = Math.round((p.price * 1.35) / 50) * 50;
     if (autoMrp <= p.price) autoMrp = p.price + 500;
     p.mrp = autoMrp;
   } else {
@@ -1409,11 +1409,11 @@ function renderCategoryProductSections(searchQuery = '') {
                             <span class="admin-prod-sub-tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(subName)}</span>
                             <h4 class="admin-prod-title">${escapeHtml(prod.title || prod.name)}</h4>
                             <div class="admin-prod-price-row">
-                              <span class="admin-prod-price">${prod.priceFormatted || (prod.price > 0 ? '₹' + Number(prod.price).toLocaleString('en-IN') : '₹0')}</span>
                               ${(prod.mrp && prod.mrp > (prod.price || 0)) ? `
-                                <span class="admin-prod-mrp">₹${Number(prod.mrp).toLocaleString('en-IN')}</span>
-                                <span class="admin-prod-discount-badge">${Math.round(((prod.mrp - (prod.price || 0)) / prod.mrp) * 100)}% OFF</span>
+                                <span class="card-discount-pct"><i class="fa-solid fa-arrow-down"></i>${Math.round(((prod.mrp - (prod.price || 0)) / prod.mrp) * 100)}%</span>
+                                <span class="card-mrp-price">₹${Number(prod.mrp).toLocaleString('en-IN')}</span>
                               ` : ''}
+                              <span class="admin-prod-price">${prod.priceFormatted || (prod.price > 0 ? '₹' + Number(prod.price).toLocaleString('en-IN') : '₹0')}</span>
                               ${prod.origin ? `<span class="admin-prod-origin"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(prod.origin)}</span>` : ''}
                             </div>
                             ${prod.description ? `<p class="admin-prod-desc-snippet">${escapeHtml(prod.description)}</p>` : ''}
@@ -1689,10 +1689,14 @@ window.handleProductSubmit = function(event) {
   }
 
   const mrpVal = document.getElementById('prodMrp') ? document.getElementById('prodMrp').value : '';
-  const mrp = mrpVal !== '' ? parseInt(mrpVal, 10) : null;
+  let mrp = mrpVal !== '' ? parseInt(mrpVal, 10) : null;
 
   const priceVal = document.getElementById('prodPrice').value;
   const price = priceVal !== '' ? parseInt(priceVal, 10) : (mrp !== null ? mrp : 0);
+  if ((!mrp || mrp <= price) && price > 0) {
+    mrp = Math.round((price * 1.35) / 50) * 50;
+    if (mrp <= price) mrp = price + 500;
+  }
   const discountPercent = (mrp && mrp > price && price > 0) ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
   const subSelect = document.getElementById('prodSubItemSelect');

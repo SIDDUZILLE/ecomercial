@@ -393,12 +393,12 @@ function normalizeProduct(p) {
 
   p.price = (p.price !== undefined && p.price !== null) ? Number(p.price) : 0;
 
-  // Ensure every product has both MRP and Discount Price
+  // Ensure every product has both MRP and Discount Selling Price
   if (p.mrp !== undefined && p.mrp !== null && p.mrp !== '' && Number(p.mrp) > p.price) {
     p.mrp = Number(p.mrp);
   } else if (p.price > 0) {
     // Generate realistic MRP so both prices appear consistently on customer dashboard
-    let autoMrp = Math.round((p.price * 1.25) / 50) * 50;
+    let autoMrp = Math.round((p.price * 1.35) / 50) * 50;
     if (autoMrp <= p.price) autoMrp = p.price + 500;
     p.mrp = autoMrp;
   } else {
@@ -1078,15 +1078,20 @@ function setupHeaderScrollEffect() {
 // =============================================================================
 
 function renderProductCardHtml(product) {
-  const hasDiscount = Boolean(product.mrp && product.mrp > (product.price || 0) && product.price > 0);
-  const discountPct = hasDiscount ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
+  const sellingPrice = (product.price !== undefined && product.price !== null) ? Number(product.price) : 0;
+  let mrp = (product.mrp && Number(product.mrp) > sellingPrice) ? Number(product.mrp) : 0;
+  if (!mrp && sellingPrice > 0) {
+    mrp = Math.round((sellingPrice * 1.35) / 50) * 50;
+    if (mrp <= sellingPrice) mrp = sellingPrice + 500;
+  }
+  const discountPct = (mrp > sellingPrice && mrp > 0) ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
 
   return `
     <article class="product-card" id="card-${product.id}">
       <div class="product-img-box">
         <img src="${product.image}" alt="${escapeHtml(product.title || product.name)}" class="product-img" loading="lazy" onerror="this.src='images/wooden-gallery.jpg'">
         <span class="product-badge">${escapeHtml(product.badge || 'Artisan Creation')}</span>
-        ${hasDiscount ? `<span class="product-discount-ribbon">${discountPct}% OFF</span>` : ''}
+        ${discountPct > 0 ? `<span class="product-discount-ribbon"><i class="fa-solid fa-arrow-down"></i>${discountPct}% OFF</span>` : ''}
         <div class="product-quick-actions">
           <button class="quick-action-btn" onclick="openQuickView('${product.id}')">
             <i class="fa-regular fa-eye"></i> QUICK VIEW
@@ -1101,16 +1106,12 @@ function renderProductCardHtml(product) {
         <h4 class="product-title">${escapeHtml(product.title || product.name)}</h4>
         ${product.subItem ? `<span class="product-sub-item-tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(product.subItem)}</span>` : ''}
         <div class="product-price-row">
-          <div class="product-price-block">
-            <div class="price-figures-wrap">
-              <span class="product-price">${product.priceFormatted || '₹' + (product.price || 0).toLocaleString('en-IN')}</span>
-              ${(product.mrp && product.mrp > (product.price || 0)) ? `
-                <span class="product-mrp-price"><span class="mrp-prefix">MRP:</span> ₹${Number(product.mrp).toLocaleString('en-IN')}</span>
-              ` : ''}
+          <div class="card-deal-pricing">
+            <div class="card-deal-row">
+              <span class="card-discount-pct"><i class="fa-solid fa-arrow-down"></i>${discountPct}%</span>
+              <span class="card-mrp-price">₹${mrp.toLocaleString('en-IN')}</span>
+              <span class="card-selling-price">₹${sellingPrice.toLocaleString('en-IN')}</span>
             </div>
-            ${hasDiscount ? `
-              <span class="product-discount-tag">${discountPct}% OFF</span>
-            ` : ''}
           </div>
           <button class="add-cart-mini-btn" onclick="addToCart('${product.id}')" title="Add to bag">
             <i class="fa-solid fa-bag-shopping"></i>
@@ -1464,9 +1465,14 @@ window.openQuickView = function(productId) {
   const product = PRODUCTS_DATA.find(p => p.id === productId);
   if (!product) return;
 
-  const hasDiscount = Boolean(product.mrp && product.mrp > (product.price || 0) && product.price > 0);
-  const discountPct = hasDiscount ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
-  const savingsAmount = hasDiscount ? (product.mrp - product.price) : 0;
+  const sellingPrice = (product.price !== undefined && product.price !== null) ? Number(product.price) : 0;
+  let mrp = (product.mrp && Number(product.mrp) > sellingPrice) ? Number(product.mrp) : 0;
+  if (!mrp && sellingPrice > 0) {
+    mrp = Math.round((sellingPrice * 1.35) / 50) * 50;
+    if (mrp <= sellingPrice) mrp = sellingPrice + 500;
+  }
+  const discountPct = (mrp > sellingPrice && mrp > 0) ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
+  const savingsAmount = (mrp > sellingPrice) ? (mrp - sellingPrice) : 0;
 
   const content = document.getElementById('quickViewContent');
   content.innerHTML = `
@@ -1476,14 +1482,21 @@ window.openQuickView = function(productId) {
     <div class="quick-view-details">
       <span class="modal-eyebrow">${product.category} • ${product.subItem}</span>
       <h2>${product.title}</h2>
-      <div class="quick-view-price-wrap">
-        <span class="quick-view-price">${product.priceFormatted}</span>
-        ${hasDiscount ? `
-          <span class="quick-view-mrp">₹${Number(product.mrp).toLocaleString('en-IN')}</span>
-          <span class="quick-view-discount-pill">${discountPct}% OFF</span>
-          <span class="quick-view-savings-text"><i class="fa-solid fa-tag"></i> Save ₹${savingsAmount.toLocaleString('en-IN')}</span>
+      
+      <!-- Reference Pricing Banner: ↓Discount% StrikethroughMRP SellingPrice -->
+      <div class="deal-pricing-container">
+        <div class="deal-pricing-row">
+          <span class="deal-discount-pct"><i class="fa-solid fa-arrow-down"></i>${discountPct}%</span>
+          <span class="deal-mrp-price">₹${mrp.toLocaleString('en-IN')}</span>
+          <span class="deal-selling-price">₹${sellingPrice.toLocaleString('en-IN')}</span>
+        </div>
+        ${savingsAmount > 0 ? `
+          <div class="deal-savings-banner">
+            <i class="fa-solid fa-tag"></i> Special Artisan Offer • You Save ₹${savingsAmount.toLocaleString('en-IN')}
+          </div>
         ` : ''}
       </div>
+
       <p style="color: var(--color-text-muted); font-size: 0.95rem; line-height: 1.7;">${product.description}</p>
       
       <div class="quick-view-specs">
@@ -1928,10 +1941,14 @@ window.handleCustomerProductSubmit = function(event) {
   const category = categoryObj.name;
 
   const mrpVal = document.getElementById('custProdMrp') ? document.getElementById('custProdMrp').value : '';
-  const mrp = mrpVal !== '' ? parseInt(mrpVal, 10) : null;
+  let mrp = mrpVal !== '' ? parseInt(mrpVal, 10) : null;
 
   const priceVal = document.getElementById('custProdPrice').value;
   const price = priceVal !== '' ? parseInt(priceVal, 10) : (mrp !== null ? mrp : 0);
+  if ((!mrp || mrp <= price) && price > 0) {
+    mrp = Math.round((price * 1.35) / 50) * 50;
+    if (mrp <= price) mrp = price + 500;
+  }
   const discountPercent = (mrp && mrp > price && price > 0) ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
   const subSelect = document.getElementById('custProdSubItem');

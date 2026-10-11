@@ -2742,6 +2742,109 @@ ul {
   margin-left: auto;
 }
 
+/* Reference Deal Pricing Layout (As seen in Flipkart/E-Commerce design: ↓Discount% StrikethroughMRP SellingPrice) */
+.deal-pricing-container {
+  margin-bottom: 18px;
+  padding: 12px 16px;
+  background: #fbfbfa;
+  border-radius: 8px;
+  border: 1px solid rgba(19, 115, 51, 0.14);
+}
+
+.deal-pricing-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.deal-discount-pct {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #137333;
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.deal-discount-pct i {
+  font-size: 0.85em;
+}
+
+.deal-mrp-price {
+  color: #717478;
+  font-size: 1.35rem;
+  font-weight: 500;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.8px;
+  line-height: 1;
+}
+
+.deal-selling-price {
+  color: #1a1a1a;
+  font-size: 1.95rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.deal-savings-banner {
+  margin-top: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #137333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Card Deal Pricing (Storefront Catalog Cards) */
+.card-deal-pricing {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.card-deal-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card-discount-pct {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: #137333;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.card-discount-pct i {
+  font-size: 0.8em;
+}
+
+.card-mrp-price {
+  color: #717478;
+  font-size: 0.86rem;
+  font-weight: 500;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.2px;
+  line-height: 1;
+}
+
+.card-selling-price {
+  color: #1a1a1a;
+  font-size: 1.18rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  line-height: 1;
+}
+
 .quick-view-specs {
   margin: 18px 0;
   font-size: 0.85rem;
