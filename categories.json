@@ -1,0 +1,163 @@
+[
+  {
+    "id": "artisan-gallery",
+    "channel": "shop",
+    "channelName": "Shop Collections",
+    "name": "Artisan Gallery",
+    "displayName": "1. Artisan Gallery",
+    "badge": "Collection 01",
+    "description": "Earthen terracotta vases, sculpted clay urns, ambient lamps, and organic sabai grass handwoven creations.",
+    "icon": "fa-palette",
+    "image": "images/artisan-gallery.jpg",
+    "subCategories": [
+      "Lamps & Ambient Lighting",
+      "Terracotta & Clay Crafts",
+      "Handwoven",
+      "Cane crafts",
+      "Artisan Décor"
+    ]
+  },
+  {
+    "id": "wooden-gallery",
+    "channel": "shop",
+    "channelName": "Shop Collections",
+    "name": "Wooden Crafts",
+    "displayName": "2. Wooden Crafts",
+    "badge": "Collection 02",
+    "description": "Artisanal carved teakwood clocks, keychains, traditional toys, tea-light candles & wooden décor.",
+    "icon": "fa-tree",
+    "image": "images/wooden-gallery.jpg",
+    "subCategories": [
+      "Toys",
+      "Keychains & Mini Gifts",
+      "Tea-Light Candles",
+      "Wooden Clocks",
+      "Wooden Decor"
+    ]
+  },
+  {
+    "id": "premium-home-decor",
+    "channel": "shop",
+    "channelName": "Shop Collections",
+    "name": "Premium Home Décor",
+    "displayName": "3. Premium Home Décor",
+    "badge": "Collection 03",
+    "description": "Sculptural brass accents, hammered urlis, wall tapestries, and tabletop statement pieces.",
+    "icon": "fa-couch",
+    "image": "images/premium-decor.jpg",
+    "subCategories": [
+      "Table Décor",
+      "Wall Décor",
+      "Traditional & Heritage Décor",
+      "Sculptures & Figurines"
+    ]
+  },
+  {
+    "id": "personalization-gifting",
+    "channel": "shop",
+    "channelName": "Shop Collections",
+    "name": "Gifting",
+    "displayName": "4. Gifting",
+    "badge": "Collection 04",
+    "description": "Artisan return gifts, festive boxes, curated gift sets, eco-friendly gifts & bespoke keepsakes.",
+    "icon": "fa-gift",
+    "image": "images/personalization.jpg",
+    "subCategories": [
+      "Return Gifts",
+      "Festive Gifts",
+      "Curated Gift Sets",
+      "Eco-Friendly Gifts",
+      "Occasion Gifts"
+    ]
+  },
+  {
+    "id": "corporate-gifting",
+    "channel": "corporate",
+    "channelName": "Corporate Gifting",
+    "name": "Corporate Gifting",
+    "displayName": "Corporate Gifting (6 Categories)",
+    "badge": "Corporate B2B",
+    "description": "Curated corporate gifting, employee onboarding, milestones, festive hampers & ESG sustainable partner gifts.",
+    "icon": "fa-briefcase",
+    "image": "images/corporate-lifestyle.jpg",
+    "subCategories": [
+      "Employee Welcome & Onboarding",
+      "Employee Recognition & Milestones",
+      "Festive & Celebration Gifting",
+      "Client, Partner & Executive Gifting",
+      "Sustainable & ESG Gifting",
+      "Curated & Custom Corporate Gift Sets"
+    ]
+  },
+  {
+    "id": "wholesale-wood",
+    "channel": "wholesale",
+    "channelName": "Wholesale",
+    "name": "Wholesale Wood Crafts",
+    "displayName": "Wholesale - Wood Crafts",
+    "badge": "Wholesale Wood",
+    "description": "Bulk wholesale procurement for Indian boutiques, gift stores, lifestyle retailers and resellers.",
+    "icon": "fa-tree",
+    "image": "images/wholesale.jpg",
+    "subCategories": [
+      "Elephant",
+      "Buddha",
+      "Tea-Light Holders",
+      "Traditional Toys & Figurines",
+      "Decorative Boxes & Trays"
+    ]
+  },
+  {
+    "id": "wholesale-metal",
+    "channel": "wholesale",
+    "channelName": "Wholesale",
+    "name": "Wholesale Metal Crafts",
+    "displayName": "Wholesale - Metal Crafts",
+    "badge": "Wholesale Metal",
+    "description": "Handcrafted solid brass and metal crafts for wholesale retailers, gift shops and interior designers.",
+    "icon": "fa-gem",
+    "image": "images/wholesale.jpg",
+    "subCategories": [
+      "Radha Krishna",
+      "Buddha",
+      "Musician Sets",
+      "Elephant & Animal",
+      "Artistic Wall Décor"
+    ]
+  },
+  {
+    "id": "export-wood",
+    "channel": "export",
+    "channelName": "Export",
+    "name": "Export Wood Crafts",
+    "displayName": "Export - Wood Crafts",
+    "badge": "Export Wood",
+    "description": "International export supply for global retailers, distributors, hospitality and lifestyle brands.",
+    "icon": "fa-earth-americas",
+    "image": "images/global-sourcing.jpg",
+    "subCategories": [
+      "Wooden Decorative Trays",
+      "Wooden Boxes & Organisers",
+      "Wooden Tea-Light Holders",
+      "Figurines & Sculptural Décor",
+      "Traditional Toys & Play Objects"
+    ]
+  },
+  {
+    "id": "export-metal",
+    "channel": "export",
+    "channelName": "Export",
+    "name": "Export Metal Crafts",
+    "displayName": "Export - Metal Crafts",
+    "badge": "Export Metal",
+    "description": "Global export consignments of handcrafted brass statues, wall art, and ambient tea-light holders.",
+    "icon": "fa-plane-departure",
+    "image": "images/global-sourcing.jpg",
+    "subCategories": [
+      "Metal Sculptural Figurines",
+      "Metal Table & Wall Décor",
+      "Candle / Tea-Light Holders",
+      "Indian Musician Sets"
+    ]
+  }
+]

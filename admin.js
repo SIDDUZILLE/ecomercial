@@ -178,39 +178,90 @@ const DEFAULT_CATEGORIES = [
 let PRODUCT_CATEGORIES = [...DEFAULT_CATEGORIES];
 let currentAdminChannel = 'all';
 
+// Multi-origin API resolver (works on http://localhost:3000, 127.0.0.1, or file://)
+function getApiUrl(path) {
+  if (window.location.protocol === 'file:') {
+    return 'http://localhost:3000' + path;
+  }
+  return path;
+}
+
+const storeBroadcastChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('verdanta_store_channel') : null;
+
+// Upload base64 image data URL to the server to persist as a real, lightweight image file on disk
+async function uploadImageToServer(dataUrl) {
+  if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image')) {
+    return dataUrl;
+  }
+  try {
+    const res = await fetch(getApiUrl('/api/upload-image'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: dataUrl })
+    });
+    if (res.ok) {
+      const result = await res.json();
+      if (result && result.success && result.url) {
+        return result.url;
+      }
+    }
+  } catch (err) {
+    console.warn('Image upload to server error, using local fallback:', err);
+  }
+  return dataUrl;
+}
+
 function loadCategories() {
   const stored = localStorage.getItem('verdanta_categories');
   if (stored) {
     try {
       let parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Explicitly remove ESG corporate solutions from categories
         parsed = parsed.filter(c => c.id !== 'esg-corporate-solution' && !c.name.toLowerCase().includes('esg corporate'));
-
-        // Ensure all DEFAULT_CATEGORIES exist in parsed list
         const existingIds = new Set(parsed.map(c => c.id));
-        let added = false;
         DEFAULT_CATEGORIES.forEach(defCat => {
           if (!existingIds.has(defCat.id)) {
             parsed.push(defCat);
-            added = true;
           }
         });
         PRODUCT_CATEGORIES = parsed;
-        saveCategories();
-        return;
+      } else {
+        PRODUCT_CATEGORIES = [...DEFAULT_CATEGORIES];
       }
     } catch (e) {
-      console.warn('Could not parse stored categories:', e);
+      PRODUCT_CATEGORIES = [...DEFAULT_CATEGORIES];
     }
+  } else {
+    PRODUCT_CATEGORIES = [...DEFAULT_CATEGORIES];
   }
-  PRODUCT_CATEGORIES = [...DEFAULT_CATEGORIES];
-  saveCategories();
+
+  // Also fetch categories from server if available
+  fetch(getApiUrl('/api/categories'))
+    .then(res => res.json())
+    .then(serverCats => {
+      if (Array.isArray(serverCats) && serverCats.length > 0) {
+        PRODUCT_CATEGORIES = serverCats.filter(c => c.id !== 'esg-corporate-solution');
+        try {
+          localStorage.setItem('verdanta_categories', JSON.stringify(PRODUCT_CATEGORIES));
+        } catch (e) {}
+      }
+    })
+    .catch(() => {});
 }
 
 function saveCategories() {
-  localStorage.setItem('verdanta_categories', JSON.stringify(PRODUCT_CATEGORIES));
+  try {
+    localStorage.setItem('verdanta_categories', JSON.stringify(PRODUCT_CATEGORIES));
+  } catch (e) {}
+  fetch(getApiUrl('/api/categories'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(PRODUCT_CATEGORIES)
+  }).catch(() => {});
   window.dispatchEvent(new Event('storage'));
+  if (storeBroadcastChannel) {
+    storeBroadcastChannel.postMessage({ type: 'CATEGORIES_UPDATED', timestamp: Date.now() });
+  }
 }
 
 
@@ -877,6 +928,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Load Data from LocalStorage
+// Load Data with local cache and immediate server sync
 function loadData() {
   loadCategories();
   const storedProd = localStorage.getItem('verdanta_products');
@@ -885,17 +937,6 @@ function loadData() {
       const parsed = JSON.parse(storedProd);
       if (Array.isArray(parsed) && parsed.length > 0) {
         adminProducts = parsed.map(normalizeProduct);
-        const existingIds = new Set(adminProducts.map(p => p.id));
-        let addedNew = false;
-        SEED_PRODUCTS.forEach(sp => {
-          if (!existingIds.has(sp.id)) {
-            adminProducts.push(normalizeProduct(sp));
-            addedNew = true;
-          }
-        });
-        if (addedNew) {
-          saveProducts();
-        }
       } else {
         adminProducts = SEED_PRODUCTS.map(normalizeProduct);
       }
@@ -904,8 +945,23 @@ function loadData() {
     }
   } else {
     adminProducts = SEED_PRODUCTS.map(normalizeProduct);
-    saveProducts();
   }
+
+  // Fetch definitive products list from backend server
+  fetch(getApiUrl('/api/products'))
+    .then(res => res.json())
+    .then(serverProducts => {
+      if (Array.isArray(serverProducts) && serverProducts.length > 0) {
+        adminProducts = serverProducts.map(normalizeProduct);
+        try {
+          localStorage.setItem('verdanta_products', JSON.stringify(adminProducts));
+        } catch (e) {}
+        renderCategoryProductSections();
+        renderDashboard();
+        updateSidebarCounts();
+      }
+    })
+    .catch(err => console.log('Local data active; server sync pending:', err));
 
   const storedProp = localStorage.getItem('verdanta_proposals');
   if (storedProp) {
@@ -933,30 +989,39 @@ function loadData() {
 }
 
 function saveProducts() {
+  // 1. Immediate local storage save
   try {
     localStorage.setItem('verdanta_products', JSON.stringify(adminProducts));
   } catch (err) {
-    console.warn('LocalStorage quota limit reached, optimizing photo data...', err);
-    // Safety fallback: if storage is tight, strip excessively large base64 photos to keep products functioning
-    adminProducts.forEach(p => {
-      if (p.image && p.image.startsWith('data:image') && p.image.length > 180000) {
-        p.image = 'images/artisan-gallery.jpg';
-      }
-    });
-    try {
-      localStorage.setItem('verdanta_products', JSON.stringify(adminProducts));
-    } catch (e2) {
-      console.error('Critical localStorage error:', e2);
-      alert('Browser local storage limit reached. Please remove unnecessary items or use web image URLs.');
-    }
+    console.warn('LocalStorage quota limit reached, server file sync handles persistence.', err);
   }
   updateSidebarCounts();
 
-  // Notify other tabs and storefront listeners
+  // 2. Direct server persistence: writes directly to products.json and uploads folder
+  fetch(getApiUrl('/api/products'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(adminProducts)
+  }).then(res => res.json())
+    .then(data => {
+      if (data && data.products) {
+        // Update adminProducts with server-saved disk paths if any base64 was converted
+        adminProducts = data.products.map(normalizeProduct);
+        try {
+          localStorage.setItem('verdanta_products', JSON.stringify(adminProducts));
+        } catch (e) {}
+      }
+    })
+    .catch(err => console.warn('Server sync error:', err));
+
+  // 3. Notify other tabs, windows, and storefront listeners
   try {
     localStorage.setItem('verdanta_sync_trigger', String(Date.now()));
     window.dispatchEvent(new Event('storage'));
     window.dispatchEvent(new CustomEvent('verdanta-products-updated', { detail: adminProducts }));
+    if (storeBroadcastChannel) {
+      storeBroadcastChannel.postMessage({ type: 'PRODUCTS_UPDATED', timestamp: Date.now() });
+    }
   } catch (e) {}
 }
 
@@ -1095,17 +1160,17 @@ window.handleImageFileUpload = function(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
 
-  if (file.size > 8 * 1024 * 1024) {
-    alert('Please choose a photo under 8MB.');
+  if (file.size > 20 * 1024 * 1024) {
+    alert('Please choose a photo under 20MB.');
     return;
   }
 
   const reader = new FileReader();
   reader.onload = function(e) {
     const img = new Image();
-    img.onload = function() {
-      // Auto-scale to max 720px for web efficiency, crisp retina clarity, and lightweight saving
-      const maxDim = 720;
+    img.onload = async function() {
+      // Scale for web viewing and sharp display
+      const maxDim = 900;
       let width = img.width;
       let height = img.height;
       if (width > maxDim || height > maxDim) {
@@ -1122,10 +1187,19 @@ window.handleImageFileUpload = function(event) {
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
 
       uploadedPhotoDataUrl = dataUrl;
-      showPhotoPreview(dataUrl, 'Uploaded from Computer');
+      showPhotoPreview(dataUrl, 'Saving Photo to Disk...');
+
+      // Save directly to server disk as an actual image file
+      const savedDiskUrl = await uploadImageToServer(dataUrl);
+      if (savedDiskUrl) {
+        uploadedPhotoDataUrl = savedDiskUrl;
+        showPhotoPreview(savedDiskUrl, 'Saved to Server Disk');
+      } else {
+        showPhotoPreview(dataUrl, 'Photo Ready');
+      }
 
       // Clear custom URL and preset radio selection
       const customInput = document.getElementById('prodCustomImage');
@@ -1670,8 +1744,14 @@ window.calculateDiscountPreview = function(context = 'admin') {
 };
 
 // Handle Add / Edit Submission
-window.handleProductSubmit = function(event) {
+window.handleProductSubmit = async function(event) {
   event.preventDefault();
+  const saveBtn = document.getElementById('saveProductBtn');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publishing to Live Store...';
+  }
+
   const editId = document.getElementById('editProductId').value;
   const title = document.getElementById('prodTitle').value.trim();
   const categorySelect = document.getElementById('prodCategorySelect');
@@ -1731,6 +1811,12 @@ window.handleProductSubmit = function(event) {
     }
   }
 
+  // If image is still a base64 string, upload and persist it to disk now
+  if (image && image.startsWith('data:image')) {
+    const diskPath = await uploadImageToServer(image);
+    if (diskPath) image = diskPath;
+  }
+
   if (editId) {
     // Update existing product in place without creating a duplicate
     const index = adminProducts.findIndex(p => p.id === editId);
@@ -1785,6 +1871,11 @@ window.handleProductSubmit = function(event) {
   renderCategoryProductSections();
   renderDashboard();
   closeProductModal();
+
+  if (saveBtn) {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Product to Live Store';
+  }
 };
 
 // Delete Product Confirmation

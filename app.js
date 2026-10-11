@@ -187,6 +187,39 @@ const DEFAULT_CATEGORIES = [
 
 let PRODUCT_CATEGORIES = [...DEFAULT_CATEGORIES];
 
+// Multi-origin API resolver (works on http://localhost:3000, 127.0.0.1, or file://)
+function getApiUrl(path) {
+  if (window.location.protocol === 'file:') {
+    return 'http://localhost:3000' + path;
+  }
+  return path;
+}
+
+const storeBroadcastChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('verdanta_store_channel') : null;
+
+// Upload base64 image data URL to the server to persist as a real image file on disk
+async function uploadImageToServer(dataUrl) {
+  if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image')) {
+    return dataUrl;
+  }
+  try {
+    const res = await fetch(getApiUrl('/api/upload-image'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: dataUrl })
+    });
+    if (res.ok) {
+      const result = await res.json();
+      if (result && result.success && result.url) {
+        return result.url;
+      }
+    }
+  } catch (err) {
+    console.warn('Image upload to server error, using local fallback:', err);
+  }
+  return dataUrl;
+}
+
 function loadCategories() {
   const stored = localStorage.getItem('verdanta_categories');
   if (stored) {
@@ -198,27 +231,34 @@ function loadCategories() {
         
         // Ensure all DEFAULT_CATEGORIES exist in parsed list
         const existingIds = new Set(parsed.map(c => c.id));
-        let added = false;
         DEFAULT_CATEGORIES.forEach(defCat => {
           if (!existingIds.has(defCat.id)) {
             parsed.push(defCat);
-            added = true;
           }
         });
         PRODUCT_CATEGORIES = parsed;
+      } else {
+        PRODUCT_CATEGORIES = [...DEFAULT_CATEGORIES];
+      }
+    } catch (e) {
+      PRODUCT_CATEGORIES = [...DEFAULT_CATEGORIES];
+    }
+  } else {
+    PRODUCT_CATEGORIES = [...DEFAULT_CATEGORIES];
+  }
+
+  // Also fetch categories from server
+  fetch(getApiUrl('/api/categories'))
+    .then(res => res.json())
+    .then(serverCats => {
+      if (Array.isArray(serverCats) && serverCats.length > 0) {
+        PRODUCT_CATEGORIES = serverCats.filter(c => c.id !== 'esg-corporate-solution');
         try {
           localStorage.setItem('verdanta_categories', JSON.stringify(PRODUCT_CATEGORIES));
         } catch (e) {}
-        return;
       }
-    } catch (e) {
-      console.warn('Could not parse stored categories:', e);
-    }
-  }
-  PRODUCT_CATEGORIES = [...DEFAULT_CATEGORIES];
-  try {
-    localStorage.setItem('verdanta_categories', JSON.stringify(PRODUCT_CATEGORIES));
-  } catch (e) {}
+    })
+    .catch(() => {});
 }
 
 loadCategories();
@@ -973,23 +1013,53 @@ function renderCategoryCardsGrid() {
   }).join('');
 }
 
-// Storefront dynamic reloader for immediate synchronization
-function reloadStorefrontProducts() {
+let lastSyncedProductsJson = '';
+
+// Storefront dynamic reloader for immediate synchronization with disk & server
+async function syncStorefrontWithServer() {
+  try {
+    const res = await fetch(getApiUrl('/api/products'));
+    if (res.ok) {
+      const serverProducts = await res.json();
+      if (Array.isArray(serverProducts) && serverProducts.length > 0) {
+        const str = JSON.stringify(serverProducts);
+        if (str !== lastSyncedProductsJson) {
+          lastSyncedProductsJson = str;
+          PRODUCTS_DATA = serverProducts.map(normalizeProduct);
+          try {
+            localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
+          } catch (e) {}
+          renderNavbarShopDropdown();
+          renderCategoryTabs();
+          renderCategoryCardsGrid();
+          renderProductCatalog();
+        }
+        return;
+      }
+    }
+  } catch (err) {
+    // Server fetch fallback to local storage
+  }
+
+  // Fallback to local storage
   try {
     const raw = JSON.parse(localStorage.getItem('verdanta_products'));
     if (Array.isArray(raw) && raw.length > 0) {
-      PRODUCTS_DATA = raw.map(normalizeProduct);
-    } else {
-      PRODUCTS_DATA = DEFAULT_PRODUCTS.map(normalizeProduct);
+      const str = JSON.stringify(raw);
+      if (str !== lastSyncedProductsJson) {
+        lastSyncedProductsJson = str;
+        PRODUCTS_DATA = raw.map(normalizeProduct);
+        renderNavbarShopDropdown();
+        renderCategoryTabs();
+        renderCategoryCardsGrid();
+        renderProductCatalog();
+      }
     }
-  } catch (err) {
-    PRODUCTS_DATA = DEFAULT_PRODUCTS.map(normalizeProduct);
-  }
-  loadCategories();
-  renderNavbarShopDropdown();
-  renderCategoryTabs();
-  renderCategoryCardsGrid();
-  renderProductCatalog();
+  } catch (err) {}
+}
+
+function reloadStorefrontProducts() {
+  syncStorefrontWithServer();
 }
 
 // Initialize App
@@ -1004,6 +1074,17 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   setupHeaderScrollEffect();
 
+  // Immediate sync from server
+  syncStorefrontWithServer();
+
+  // Cross-tab real-time sync via BroadcastChannel
+  if (storeBroadcastChannel) {
+    storeBroadcastChannel.onmessage = (e) => {
+      syncStorefrontWithServer();
+      loadCategories();
+    };
+  }
+
   // Listen for admin changes across tabs or local storage dispatch
   window.addEventListener('storage', (e) => {
     if (!e.key || e.key === 'verdanta_categories') {
@@ -1014,7 +1095,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderProductCatalog();
     }
     if (!e.key || e.key === 'verdanta_products' || e.key === 'verdanta_sync_trigger') {
-      reloadStorefrontProducts();
+      syncStorefrontWithServer();
     }
   });
 
@@ -1029,13 +1110,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Re-sync instantly whenever user switches back to storefront tab
   window.addEventListener('focus', () => {
-    reloadStorefrontProducts();
+    syncStorefrontWithServer();
   });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
-      reloadStorefrontProducts();
+      syncStorefrontWithServer();
     }
   });
+
+  // Fast heartbeat sync (checks every 2.5 seconds so admin changes appear live without refresh)
+  setInterval(() => {
+    syncStorefrontWithServer();
+  }, 2500);
 });
 
 // Setup Events
@@ -1829,16 +1915,16 @@ window.handleCustomerImageUpload = function(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
 
-  if (file.size > 8 * 1024 * 1024) {
-    alert('Please choose an image file under 8MB.');
+  if (file.size > 20 * 1024 * 1024) {
+    alert('Please choose an image file under 20MB.');
     return;
   }
 
   const reader = new FileReader();
   reader.onload = function(e) {
     const img = new Image();
-    img.onload = function() {
-      const maxDim = 800;
+    img.onload = async function() {
+      const maxDim = 900;
       let width = img.width;
       let height = img.height;
       if (width > maxDim || height > maxDim) {
@@ -1855,10 +1941,19 @@ window.handleCustomerImageUpload = function(event) {
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.80);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
 
       custUploadedPhotoDataUrl = dataUrl;
-      showCustomerPhotoPreview(dataUrl, 'Uploaded from Computer');
+      showCustomerPhotoPreview(dataUrl, 'Saving Photo to Disk...');
+
+      // Save directly to server disk as an actual image file
+      const savedDiskUrl = await uploadImageToServer(dataUrl);
+      if (savedDiskUrl) {
+        custUploadedPhotoDataUrl = savedDiskUrl;
+        showCustomerPhotoPreview(savedDiskUrl, 'Saved to Server Disk');
+      } else {
+        showCustomerPhotoPreview(dataUrl, 'Photo Ready');
+      }
 
       const customInput = document.getElementById('custProdCustomImage');
       if (customInput) customInput.value = '';
@@ -1950,7 +2045,7 @@ window.calculateDiscountPreview = function(context = 'cust') {
   }
 };
 
-window.handleCustomerProductSubmit = function(event) {
+window.handleCustomerProductSubmit = async function(event) {
   event.preventDefault();
 
   const title = document.getElementById('custProdTitle').value.trim();
@@ -2000,6 +2095,12 @@ window.handleCustomerProductSubmit = function(event) {
     }
   }
 
+  // Upload to disk if still base64
+  if (image && image.startsWith('data:image')) {
+    const savedUrl = await uploadImageToServer(image);
+    if (savedUrl) image = savedUrl;
+  }
+
   const badge = document.getElementById('custProdBadge').value || 'New Arrival';
   const origin = document.getElementById('custProdOrigin').value.trim() || 'Handcrafted in India';
   const description = document.getElementById('custProdDescription').value.trim() || '';
@@ -2029,17 +2130,23 @@ window.handleCustomerProductSubmit = function(event) {
   // Save to localStorage safely
   try {
     localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
-  } catch (err) {
-    console.warn('LocalStorage limit reached on storefront, optimizing...', err);
-    PRODUCTS_DATA.forEach(p => {
-      if (p.image && p.image.startsWith('data:image') && p.image.length > 180000) {
-        p.image = 'images/artisan-gallery.jpg';
+  } catch (err) {}
+
+  // Sync to server backend
+  fetch(getApiUrl('/api/products'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(PRODUCTS_DATA)
+  }).then(res => res.json())
+    .then(data => {
+      if (data && data.products) {
+        PRODUCTS_DATA = data.products.map(normalizeProduct);
+        try {
+          localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
+        } catch (e) {}
       }
-    });
-    try {
-      localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
-    } catch (e2) {}
-  }
+    })
+    .catch(() => {});
 
   // Re-render storefront catalog & category tabs
   renderCategoryTabs();
@@ -2059,9 +2166,13 @@ window.handleCustomerProductSubmit = function(event) {
     }
   }, 350);
 
-  // Notify other tabs
+  // Notify other tabs and windows
   try {
+    localStorage.setItem('verdanta_sync_trigger', String(Date.now()));
     window.dispatchEvent(new Event('storage'));
     window.dispatchEvent(new CustomEvent('verdanta-products-updated', { detail: PRODUCTS_DATA }));
+    if (storeBroadcastChannel) {
+      storeBroadcastChannel.postMessage({ type: 'PRODUCTS_UPDATED', timestamp: Date.now() });
+    }
   } catch (e) {}
 };
