@@ -844,17 +844,24 @@ function normalizeProduct(p) {
   p.category = cat.name;
   if (!p.title && p.name) p.title = p.name;
   if (!p.name && p.title) p.name = p.title;
-  if (p.mrp !== undefined && p.mrp !== null && p.mrp !== '') {
+
+  p.price = (p.price !== undefined && p.price !== null) ? Number(p.price) : 0;
+
+  // Ensure every product has both MRP and Discount Price
+  if (p.mrp !== undefined && p.mrp !== null && p.mrp !== '' && Number(p.mrp) > p.price) {
     p.mrp = Number(p.mrp);
-    p.mrpFormatted = p.mrp > 0 ? '₹' + p.mrp.toLocaleString('en-IN') : null;
+  } else if (p.price > 0) {
+    let autoMrp = Math.round((p.price * 1.25) / 50) * 50;
+    if (autoMrp <= p.price) autoMrp = p.price + 500;
+    p.mrp = autoMrp;
   } else {
-    p.mrp = null;
-    p.mrpFormatted = null;
+    p.mrp = 0;
   }
-  if (!p.priceFormatted) {
-    p.priceFormatted = (p.price && p.price > 0) ? '₹' + Number(p.price).toLocaleString('en-IN') : '₹0';
-  }
-  if (p.mrp && p.mrp > (p.price || 0) && p.price > 0) {
+
+  p.mrpFormatted = p.mrp > 0 ? '₹' + p.mrp.toLocaleString('en-IN') : null;
+  p.priceFormatted = (p.price && p.price > 0) ? '₹' + p.price.toLocaleString('en-IN') : '₹0';
+
+  if (p.mrp && p.mrp > p.price && p.price > 0) {
     p.discountPercent = Math.round(((p.mrp - p.price) / p.mrp) * 100);
   } else {
     p.discountPercent = 0;

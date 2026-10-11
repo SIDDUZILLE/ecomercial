@@ -390,17 +390,25 @@ function normalizeProduct(p) {
   p.category = cat.name;
   if (!p.title && p.name) p.title = p.name;
   if (!p.name && p.title) p.name = p.title;
-  if (p.mrp !== undefined && p.mrp !== null && p.mrp !== '') {
+
+  p.price = (p.price !== undefined && p.price !== null) ? Number(p.price) : 0;
+
+  // Ensure every product has both MRP and Discount Price
+  if (p.mrp !== undefined && p.mrp !== null && p.mrp !== '' && Number(p.mrp) > p.price) {
     p.mrp = Number(p.mrp);
-    p.mrpFormatted = p.mrp > 0 ? '₹' + p.mrp.toLocaleString('en-IN') : null;
+  } else if (p.price > 0) {
+    // Generate realistic MRP so both prices appear consistently on customer dashboard
+    let autoMrp = Math.round((p.price * 1.25) / 50) * 50;
+    if (autoMrp <= p.price) autoMrp = p.price + 500;
+    p.mrp = autoMrp;
   } else {
-    p.mrp = null;
-    p.mrpFormatted = null;
+    p.mrp = 0;
   }
-  if (!p.priceFormatted) {
-    p.priceFormatted = (p.price && p.price > 0) ? '₹' + Number(p.price).toLocaleString('en-IN') : '₹0';
-  }
-  if (p.mrp && p.mrp > (p.price || 0) && p.price > 0) {
+
+  p.mrpFormatted = p.mrp > 0 ? '₹' + p.mrp.toLocaleString('en-IN') : null;
+  p.priceFormatted = (p.price && p.price > 0) ? '₹' + p.price.toLocaleString('en-IN') : '₹0';
+
+  if (p.mrp && p.mrp > p.price && p.price > 0) {
     p.discountPercent = Math.round(((p.mrp - p.price) / p.mrp) * 100);
   } else {
     p.discountPercent = 0;
@@ -844,11 +852,9 @@ try {
           addedNew = true;
         }
       });
-      if (addedNew) {
-        try {
-          localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
-        } catch (e) {}
-      }
+      try {
+        localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
+      } catch (e) {}
     } else {
       PRODUCTS_DATA = DEFAULT_PRODUCTS.map(normalizeProduct);
     }
@@ -1096,9 +1102,13 @@ function renderProductCardHtml(product) {
         ${product.subItem ? `<span class="product-sub-item-tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(product.subItem)}</span>` : ''}
         <div class="product-price-row">
           <div class="product-price-block">
-            <span class="product-price">${product.priceFormatted || '₹' + (product.price || 0).toLocaleString('en-IN')}</span>
+            <div class="price-figures-wrap">
+              <span class="product-price">${product.priceFormatted || '₹' + (product.price || 0).toLocaleString('en-IN')}</span>
+              ${(product.mrp && product.mrp > (product.price || 0)) ? `
+                <span class="product-mrp-price"><span class="mrp-prefix">MRP:</span> ₹${Number(product.mrp).toLocaleString('en-IN')}</span>
+              ` : ''}
+            </div>
             ${hasDiscount ? `
-              <span class="product-mrp-price">₹${Number(product.mrp).toLocaleString('en-IN')}</span>
               <span class="product-discount-tag">${discountPct}% OFF</span>
             ` : ''}
           </div>
