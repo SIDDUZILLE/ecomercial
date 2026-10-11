@@ -77,23 +77,6 @@ const DEFAULT_CATEGORIES = [
       'Occasion Gifts'
     ]
   },
-  {
-    id: 'esg-corporate-solution',
-    channel: 'shop',
-    channelName: 'Shop Collections',
-    name: 'ESG Corporate Solutions',
-    displayName: '5. ESG Corporate Solutions',
-    badge: 'Collection 05',
-    description: 'Sustainable, plastic-free employee appreciation kits and bespoke enterprise gifts.',
-    icon: 'fa-briefcase',
-    image: 'images/esg-corporate.jpg',
-    subCategories: [
-      'Employee Gifting & Welcome Hampers',
-      'Executive & Leadership Gifts',
-      'Desk Décor & Living',
-      'Eco-Friendly & Sustainable Kits'
-    ]
-  },
 
   // --- 2. CORPORATE GIFTING (6 SUB-CATEGORIES) ---
   {
@@ -199,8 +182,11 @@ function loadCategories() {
   const stored = localStorage.getItem('verdanta_categories');
   if (stored) {
     try {
-      const parsed = JSON.parse(stored);
+      let parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
+        // Explicitly remove ESG corporate solutions from categories
+        parsed = parsed.filter(c => c.id !== 'esg-corporate-solution' && !c.name.toLowerCase().includes('esg corporate'));
+
         // Ensure all DEFAULT_CATEGORIES exist in parsed list
         const existingIds = new Set(parsed.map(c => c.id));
         let added = false;
@@ -211,9 +197,7 @@ function loadCategories() {
           }
         });
         PRODUCT_CATEGORIES = parsed;
-        if (added) {
-          saveCategories();
-        }
+        saveCategories();
         return;
       }
     } catch (e) {
@@ -234,6 +218,13 @@ function saveCategories() {
 function normalizeSubCategory(catId, subItem) {
   if (!subItem) return 'Featured Creations';
   const clean = String(subItem).trim();
+  
+  // If clean exact matches an existing defined subcategory, keep it pristine
+  const cat = PRODUCT_CATEGORIES.find(c => c.id === catId);
+  if (cat && Array.isArray(cat.subCategories) && cat.subCategories.includes(clean)) {
+    return clean;
+  }
+  
   const lower = clean.toLowerCase();
   
   if (catId === 'artisan-gallery') {
@@ -259,11 +250,6 @@ function normalizeSubCategory(catId, subItem) {
     if (lower.includes('set') || lower.includes('keepsake') || lower.includes('hamper')) return 'Curated Gift Sets';
     if (lower.includes('eco')) return 'Eco-Friendly Gifts';
     if (lower.includes('occasion') || lower.includes('personal')) return 'Occasion Gifts';
-  } else if (catId === 'esg-corporate-solution') {
-    if (lower.includes('employee') || lower.includes('welcome') || lower.includes('appreciation')) return 'Employee Gifting & Welcome Hampers';
-    if (lower.includes('executive') || lower.includes('custom') || lower.includes('client')) return 'Executive & Leadership Gifts';
-    if (lower.includes('desk') || lower.includes('living')) return 'Desk Décor & Living';
-    if (lower.includes('eco') || lower.includes('sustainable') || lower.includes('kit')) return 'Eco-Friendly & Sustainable Kits';
   }
   // Corporate Gifting (6 subcategories)
   else if (catId === 'corporate-gifting') {
@@ -522,12 +508,14 @@ const SEED_PRODUCTS = [
   },
   {
     id: 'esg-01',
-    categoryId: 'esg-corporate-solution',
-    category: 'ESG Corporate Solution',
-    subItem: 'Employee Appreciation Gift Kit',
+    categoryId: 'corporate-gifting',
+    category: 'Corporate Gifting',
+    subItem: 'Sustainable & ESG Gifting',
     name: 'Eco-Growth Employee Appreciation Gift Kit',
     title: 'Eco-Growth Employee Appreciation Gift Kit',
     price: 1950,
+    mrp: 2650,
+    mrpFormatted: '₹2,650',
     priceFormatted: '₹1,950',
     badge: 'ESG Certified',
     image: 'images/esg-corporate.jpg',
@@ -538,12 +526,14 @@ const SEED_PRODUCTS = [
   },
   {
     id: 'esg-02',
-    categoryId: 'esg-corporate-solution',
-    category: 'ESG Corporate Solution',
-    subItem: 'Customization Kit',
+    categoryId: 'corporate-gifting',
+    category: 'Corporate Gifting',
+    subItem: 'Curated & Custom Corporate Gift Sets',
     name: 'Executive Client Customization Hamper',
     title: 'Executive Client Customization Hamper',
     price: 3600,
+    mrp: 4900,
+    mrpFormatted: '₹4,900',
     priceFormatted: '₹3,600',
     badge: 'Corporate Bespoke',
     image: 'images/corporate-lifestyle.jpg',
@@ -817,7 +807,7 @@ function normalizeCategoryId(catNameOrId) {
   if (clean.includes('artisan')) return 'artisan-gallery';
   if (clean.includes('wood')) return 'wooden-gallery';
   if (clean.includes('decor') || clean.includes('décor')) return 'premium-home-decor';
-  if (clean.includes('esg')) return 'esg-corporate-solution';
+  if (clean.includes('esg')) return 'corporate-gifting';
   if (clean.includes('person') || clean.includes('gift')) return 'personalization-gifting';
   return clean.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'artisan-gallery';
 }
@@ -839,6 +829,11 @@ function getCategoryById(catIdOrName) {
 
 function normalizeProduct(p) {
   if (!p) return p;
+  if (p.categoryId === 'esg-corporate-solution' || (p.category && p.category.toLowerCase().includes('esg corporate'))) {
+    p.categoryId = 'corporate-gifting';
+    p.category = 'Corporate Gifting';
+    p.subItem = 'Sustainable & ESG Gifting';
+  }
   const cat = getCategoryById(p.categoryId || p.category);
   p.categoryId = cat.id;
   p.category = cat.name;
@@ -959,6 +954,7 @@ function saveProducts() {
 
   // Notify other tabs and storefront listeners
   try {
+    localStorage.setItem('verdanta_sync_trigger', String(Date.now()));
     window.dispatchEvent(new Event('storage'));
     window.dispatchEvent(new CustomEvent('verdanta-products-updated', { detail: adminProducts }));
   } catch (e) {}
@@ -1108,8 +1104,8 @@ window.handleImageFileUpload = function(event) {
   reader.onload = function(e) {
     const img = new Image();
     img.onload = function() {
-      // Auto-scale to max 800px for web efficiency, crisp retina clarity, and lightweight saving
-      const maxDim = 800;
+      // Auto-scale to max 720px for web efficiency, crisp retina clarity, and lightweight saving
+      const maxDim = 720;
       let width = img.width;
       let height = img.height;
       if (width > maxDim || height > maxDim) {
@@ -1126,7 +1122,7 @@ window.handleImageFileUpload = function(event) {
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.80);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
 
       uploadedPhotoDataUrl = dataUrl;
       showPhotoPreview(dataUrl, 'Uploaded from Computer');
@@ -1561,7 +1557,6 @@ window.openAddProductModalForCategory = function(categoryId, subCategoryName = '
     'wooden-gallery': 'images/wooden-gallery.jpg',
     'premium-home-decor': 'images/premium-decor.jpg',
     'personalization-gifting': 'images/personalization.jpg',
-    'esg-corporate-solution': 'images/esg-corporate.jpg',
     'corporate-gifting': 'images/corporate-lifestyle.jpg',
     'wholesale-wood': 'images/wholesale.jpg',
     'wholesale-metal': 'images/wholesale.jpg',

@@ -87,23 +87,6 @@ const DEFAULT_CATEGORIES = [
       'Occasion Gifts'
     ]
   },
-  {
-    id: 'esg-corporate-solution',
-    channel: 'shop',
-    channelName: 'Shop Collections',
-    name: 'ESG Corporate Solutions',
-    displayName: '5. ESG Corporate Solutions',
-    badge: 'Collection 05',
-    description: 'Sustainable, plastic-free employee appreciation kits and bespoke enterprise gifts.',
-    icon: 'fa-briefcase',
-    image: 'images/esg-corporate.jpg',
-    subCategories: [
-      'Employee Gifting & Welcome Hampers',
-      'Executive & Leadership Gifts',
-      'Desk Décor & Living',
-      'Eco-Friendly & Sustainable Kits'
-    ]
-  },
 
   // --- 2. CORPORATE GIFTING (6 SUB-CATEGORIES) ---
   {
@@ -208,8 +191,11 @@ function loadCategories() {
   const stored = localStorage.getItem('verdanta_categories');
   if (stored) {
     try {
-      const parsed = JSON.parse(stored);
+      let parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
+        // Explicitly remove ESG corporate solutions from shop categories
+        parsed = parsed.filter(c => c.id !== 'esg-corporate-solution' && !c.name.toLowerCase().includes('esg corporate'));
+        
         // Ensure all DEFAULT_CATEGORIES exist in parsed list
         const existingIds = new Set(parsed.map(c => c.id));
         let added = false;
@@ -220,11 +206,9 @@ function loadCategories() {
           }
         });
         PRODUCT_CATEGORIES = parsed;
-        if (added) {
-          try {
-            localStorage.setItem('verdanta_categories', JSON.stringify(PRODUCT_CATEGORIES));
-          } catch (e) {}
-        }
+        try {
+          localStorage.setItem('verdanta_categories', JSON.stringify(PRODUCT_CATEGORIES));
+        } catch (e) {}
         return;
       }
     } catch (e) {
@@ -243,6 +227,13 @@ loadCategories();
 function normalizeSubCategory(catId, subItem) {
   if (!subItem) return 'Featured Creations';
   const clean = String(subItem).trim();
+  
+  // If clean exact matches an existing defined subcategory, keep it pristine
+  const cat = PRODUCT_CATEGORIES.find(c => c.id === catId);
+  if (cat && Array.isArray(cat.subCategories) && cat.subCategories.includes(clean)) {
+    return clean;
+  }
+  
   const lower = clean.toLowerCase();
   
   if (catId === 'artisan-gallery') {
@@ -268,11 +259,6 @@ function normalizeSubCategory(catId, subItem) {
     if (lower.includes('set') || lower.includes('keepsake') || lower.includes('hamper')) return 'Curated Gift Sets';
     if (lower.includes('eco')) return 'Eco-Friendly Gifts';
     if (lower.includes('occasion') || lower.includes('personal')) return 'Occasion Gifts';
-  } else if (catId === 'esg-corporate-solution') {
-    if (lower.includes('employee') || lower.includes('welcome') || lower.includes('appreciation')) return 'Employee Gifting & Welcome Hampers';
-    if (lower.includes('executive') || lower.includes('custom') || lower.includes('client')) return 'Executive & Leadership Gifts';
-    if (lower.includes('desk') || lower.includes('living')) return 'Desk Décor & Living';
-    if (lower.includes('eco') || lower.includes('sustainable') || lower.includes('kit')) return 'Eco-Friendly & Sustainable Kits';
   }
   // Corporate Gifting (6 subcategories)
   else if (catId === 'corporate-gifting') {
@@ -362,7 +348,7 @@ function normalizeCategoryId(catNameOrId) {
   if (clean.includes('artisan')) return 'artisan-gallery';
   if (clean.includes('wood')) return 'wooden-gallery';
   if (clean.includes('decor') || clean.includes('décor')) return 'premium-home-decor';
-  if (clean.includes('esg')) return 'esg-corporate-solution';
+  if (clean.includes('esg')) return 'corporate-gifting';
   if (clean.includes('person') || clean.includes('gift')) return 'personalization-gifting';
   return clean.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'artisan-gallery';
 }
@@ -385,6 +371,11 @@ function getCategoryById(catIdOrName) {
 
 function normalizeProduct(p) {
   if (!p) return p;
+  if (p.categoryId === 'esg-corporate-solution' || (p.category && p.category.toLowerCase().includes('esg corporate'))) {
+    p.categoryId = 'corporate-gifting';
+    p.category = 'Corporate Gifting';
+    p.subItem = 'Sustainable & ESG Gifting';
+  }
   const cat = getCategoryById(p.categoryId || p.category);
   p.categoryId = cat.id;
   p.category = cat.name;
@@ -613,15 +604,17 @@ const DEFAULT_PRODUCTS = [
     createdAt: new Date().toISOString()
   },
 
-  // 4) ESG Corporate Solution: employee appreciation gift kit, customization kit
+  // 4) Corporate Gifting (ESG / Sustainable & Custom Hampers)
   {
     id: 'esg-01',
-    categoryId: 'esg-corporate-solution',
-    category: 'ESG Corporate Solution',
-    subItem: 'Employee Appreciation Gift Kit',
+    categoryId: 'corporate-gifting',
+    category: 'Corporate Gifting',
+    subItem: 'Sustainable & ESG Gifting',
     name: 'Eco-Growth Employee Appreciation Gift Kit',
     title: 'Eco-Growth Employee Appreciation Gift Kit',
     price: 1950,
+    mrp: 2650,
+    mrpFormatted: '₹2,650',
     priceFormatted: '₹1,950',
     badge: 'ESG Certified',
     image: 'images/esg-corporate.jpg',
@@ -632,12 +625,14 @@ const DEFAULT_PRODUCTS = [
   },
   {
     id: 'esg-02',
-    categoryId: 'esg-corporate-solution',
-    category: 'ESG Corporate Solution',
-    subItem: 'Customization Kit',
+    categoryId: 'corporate-gifting',
+    category: 'Corporate Gifting',
+    subItem: 'Curated & Custom Corporate Gift Sets',
     name: 'Executive Client Customization Hamper',
     title: 'Executive Client Customization Hamper',
     price: 3600,
+    mrp: 4900,
+    mrpFormatted: '₹4,900',
     priceFormatted: '₹3,600',
     badge: 'Corporate Bespoke',
     image: 'images/corporate-lifestyle.jpg',
@@ -946,17 +941,18 @@ function renderCategoryTabs() {
   });
 }
 
-// 3. Render "Shop by Collection" Visual Cards
+// 3. Render "Shop by Collection" Visual Cards (Exclusively 4 Shop Collections)
 function renderCategoryCardsGrid() {
   const container = document.querySelector('.category-cards-grid');
   if (!container) return;
 
-  container.innerHTML = PRODUCT_CATEGORIES.map((cat, idx) => {
+  const shopCats = PRODUCT_CATEGORIES.filter(c => (c.channel || 'shop') === 'shop');
+
+  container.innerHTML = shopCats.map((cat, idx) => {
     const subCats = getAllSubCategoriesForCategory(cat.id);
     const subListHtml = subCats.slice(0, 5).map(s => `<li>• ${escapeHtml(s)}</li>`).join('');
-    const badgeText = cat.badge || `Collection ${idx + 1 < 10 ? '0' + (idx + 1) : idx + 1}`;
+    const badgeText = cat.badge || `Collection 0${idx + 1}`;
     const imgUrl = cat.image || 'images/wooden-gallery.jpg';
-    const isEsg = cat.id === 'esg-corporate-solution' || cat.name.toLowerCase().includes('esg');
 
     return `
       <div class="category-card" data-category="${escapeHtml(cat.name)}">
@@ -970,15 +966,30 @@ function renderCategoryCardsGrid() {
             ${subListHtml}
           </ul>
           <p class="category-card-snippet">${escapeHtml(cat.description || `Artisanal handcrafted ${cat.name} creations.`)}</p>
-          ${isEsg ? `
-            <button class="category-card-btn" onclick="openProposalModal('${escapeHtml(cat.name)}')">REQUEST ESG PROPOSAL <i class="fa-solid fa-arrow-right"></i></button>
-          ` : `
-            <button class="category-card-btn" onclick="filterAndScroll('${escapeHtml(cat.name)}')">EXPLORE ${escapeHtml(cat.name.toUpperCase())} <i class="fa-solid fa-arrow-right"></i></button>
-          `}
+          <button class="category-card-btn" onclick="filterAndScroll('${escapeHtml(cat.name)}')">EXPLORE ${escapeHtml(cat.name.toUpperCase())} <i class="fa-solid fa-arrow-right"></i></button>
         </div>
       </div>
     `;
   }).join('');
+}
+
+// Storefront dynamic reloader for immediate synchronization
+function reloadStorefrontProducts() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('verdanta_products'));
+    if (Array.isArray(raw) && raw.length > 0) {
+      PRODUCTS_DATA = raw.map(normalizeProduct);
+    } else {
+      PRODUCTS_DATA = DEFAULT_PRODUCTS.map(normalizeProduct);
+    }
+  } catch (err) {
+    PRODUCTS_DATA = DEFAULT_PRODUCTS.map(normalizeProduct);
+  }
+  loadCategories();
+  renderNavbarShopDropdown();
+  renderCategoryTabs();
+  renderCategoryCardsGrid();
+  renderProductCatalog();
 }
 
 // Initialize App
@@ -993,7 +1004,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   setupHeaderScrollEffect();
 
-  // Listen for admin changes in other tabs or local storage dispatch
+  // Listen for admin changes across tabs or local storage dispatch
   window.addEventListener('storage', (e) => {
     if (!e.key || e.key === 'verdanta_categories') {
       loadCategories();
@@ -1002,21 +1013,27 @@ document.addEventListener('DOMContentLoaded', () => {
       renderCategoryCardsGrid();
       renderProductCatalog();
     }
-    if (!e.key || e.key === 'verdanta_products') {
-      try {
-        const raw = JSON.parse(localStorage.getItem('verdanta_products'));
-        PRODUCTS_DATA = Array.isArray(raw) ? raw.map(normalizeProduct) : DEFAULT_PRODUCTS.map(normalizeProduct);
-      } catch (err) {
-        PRODUCTS_DATA = DEFAULT_PRODUCTS.map(normalizeProduct);
-      }
-      renderProductCatalog();
+    if (!e.key || e.key === 'verdanta_products' || e.key === 'verdanta_sync_trigger') {
+      reloadStorefrontProducts();
     }
   });
 
   window.addEventListener('verdanta-products-updated', (e) => {
     if (e.detail && Array.isArray(e.detail)) {
       PRODUCTS_DATA = e.detail.map(normalizeProduct);
+      renderCategoryTabs();
+      renderCategoryCardsGrid();
       renderProductCatalog();
+    }
+  });
+
+  // Re-sync instantly whenever user switches back to storefront tab
+  window.addEventListener('focus', () => {
+    reloadStorefrontProducts();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      reloadStorefrontProducts();
     }
   });
 });
@@ -1138,7 +1155,8 @@ function renderCategorySubBlocksHtml(cat, catProducts) {
     groups.push({ subName: 'Curated Creations', items: remaining });
   }
 
-  if (groups.length <= 1) {
+  // If there are no groups found, render flat grid
+  if (groups.length === 0) {
     return `
       <div class="product-cards-grid">
         ${catProducts.map(renderProductCardHtml).join('')}
