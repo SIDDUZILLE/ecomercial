@@ -82,6 +82,9 @@
           <h2 id="currentPageTitle">Dashboard Overview</h2>
         </div>
         <div class="topbar-right">
+          <button class="btn btn-outline btn-sm" id="storageSettingsBtn" onclick="openStorageModal()" style="background: #fff; display: inline-flex; align-items: center; gap: 7px; border: 1px solid #c59d5f; color: var(--color-primary); font-weight: 600; padding: 7px 14px; border-radius: 4px;">
+            <i class="fa-solid fa-hard-drive" style="color: var(--color-gold);"></i> <span id="storageStatusText">Storage: Hostinger Server</span>
+          </button>
           <button class="btn btn-primary btn-sm" onclick="openAddProductModal()" style="background: var(--color-gold); border-color: var(--color-gold); color: #fff; font-weight: 700; box-shadow: 0 2px 8px rgba(197, 157, 95, 0.3);">
             <i class="fa-solid fa-camera"></i> + Add Product Photo
           </button>
@@ -611,12 +614,95 @@
     </div>
   </div>
 
+  <!-- Permanent Storage Settings Modal (Hostinger Server & Cloudinary) -->
+  <div class="modal-backdrop" id="storageSettingsModal">
+    <div class="modal-dialog" style="max-width: 600px;">
+      <button class="modal-close" onclick="closeStorageModal()"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+          <h3 style="margin: 0; display: inline-flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-hard-drive" style="color: var(--color-gold);"></i> Permanent Photo & Product Storage
+          </h3>
+          <span id="storageActiveBadge" style="padding: 4px 10px; border-radius: 12px; font-size: 0.76rem; font-weight: 700; background: #d1fae5; color: #065f46;">
+            Hostinger Disk Active
+          </span>
+        </div>
+        <p style="font-size: 0.88rem; color: #666; margin: 0;">Choose how your admin product photos and data are permanently stored.</p>
+      </div>
+
+      <div style="padding: 20px 24px;">
+        <!-- Option 1: Hostinger Server Storage -->
+        <div style="background: #faf8f5; border: 2px solid var(--color-gold); border-radius: 8px; padding: 16px; margin-bottom: 14px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <div style="background: var(--color-primary); color: #fff; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
+              <i class="fa-solid fa-server"></i>
+            </div>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <strong style="color: var(--color-primary); font-size: 0.95rem;">Option 1: Hostinger Server Storage (Active)</strong>
+                <span style="background: #10b981; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;">DEFAULT & READY</span>
+              </div>
+              <p style="font-size: 0.82rem; color: #555; margin: 6px 0 8px 0; line-height: 1.5;">
+                Photos are automatically saved permanently on your server inside the <code>uploads/products/</code> folder, and products are stored in <code>products.json</code>.
+              </p>
+              <div style="font-size: 0.78rem; color: #777; background: #fff; padding: 6px 10px; border-radius: 4px; border: 1px solid #e5e0d8;">
+                <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Zero setup required &bull; 100% persistent on Hostinger
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Option 2: Cloudinary -->
+        <div style="background: #fff; border: 1px solid var(--color-border); border-radius: 8px; padding: 16px; margin-bottom: 18px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <div style="background: #0284c7; color: #fff; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
+              <i class="fa-solid fa-cloud"></i>
+            </div>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <strong style="color: var(--color-primary); font-size: 0.95rem;">Option 2: Cloudinary Cloud CDN (Optional)</strong>
+                <span id="cloudinaryActiveBadge" style="background: #f1f5f9; color: #64748b; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;">OPTIONAL</span>
+              </div>
+              <p style="font-size: 0.82rem; color: #555; margin: 6px 0 10px 0; line-height: 1.5;">
+                Upload photos directly to Cloudinary's global cloud storage. Images get fast CDN delivery anywhere in the world.
+              </p>
+
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label for="cloudinaryCloudName" style="font-size: 0.78rem; font-weight: 700; color: #444; display: block; margin-bottom: 3px;">
+                  Cloudinary Cloud Name
+                </label>
+                <input type="text" id="cloudinaryCloudName" placeholder="e.g. my-verdanta-store" style="width: 100%; padding: 8px 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.82rem;">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 4px;">
+                <label for="cloudinaryUploadPreset" style="font-size: 0.78rem; font-weight: 700; color: #444; display: block; margin-bottom: 3px;">
+                  Cloudinary Unsigned Upload Preset
+                </label>
+                <input type="text" id="cloudinaryUploadPreset" placeholder="e.g. verdanta_unsigned" style="width: 100%; padding: 8px 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.82rem;">
+                <span style="font-size: 0.72rem; color: #888; display: block; margin-top: 3px;">
+                  From Cloudinary Settings &rarr; Upload &rarr; Add upload preset (Signing Mode: Unsigned)
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="closeStorageModal()">Close</button>
+          <button type="button" class="btn btn-primary" id="saveStorageBtn" onclick="saveStorageSettings()" style="background: var(--color-gold); border-color: var(--color-gold); font-weight: 700;">
+            <i class="fa-solid fa-check"></i> Save Storage Settings
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Notification Toast -->
   <div class="admin-toast" id="adminToast">
     <i class="fa-solid fa-check-circle"></i>
     <span id="adminToastMessage">Action completed successfully</span>
   </div>
 
-  <script src="admin.js?v=20261011_v6"></script>
+  <script src="admin.js?v=20261012_v2"></script>
 </body>
 </html>

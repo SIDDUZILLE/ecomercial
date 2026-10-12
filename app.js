@@ -197,11 +197,36 @@ function getApiUrl(path) {
 
 const storeBroadcastChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('verdanta_store_channel') : null;
 
-// Upload base64 image data URL to the server to persist as a real image file on disk
+// Permanent Photo Storage: Cloudinary (if configured) or Hostinger Server Storage (uploads/products/)
 async function uploadImageToServer(dataUrl) {
   if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image')) {
     return dataUrl;
   }
+
+  // 1. Check if Cloudinary is configured
+  const cloudName = (localStorage.getItem('verdanta_cloudinary_cloud_name') || '').trim();
+  const uploadPreset = (localStorage.getItem('verdanta_cloudinary_upload_preset') || '').trim();
+  if (cloudName && uploadPreset) {
+    try {
+      const formData = new FormData();
+      formData.append('file', dataUrl);
+      formData.append('upload_preset', uploadPreset);
+      const cRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      if (cRes.ok) {
+        const cData = await cRes.json();
+        if (cData && cData.secure_url) {
+          return cData.secure_url;
+        }
+      }
+    } catch (cErr) {
+      console.warn('Cloudinary upload failed, using server fallback:', cErr);
+    }
+  }
+
+  // 2. Default: Hostinger Server Storage (uploads/products/)
   try {
     const res = await fetch(getApiUrl('/api/upload-image'), {
       method: 'POST',
@@ -215,7 +240,7 @@ async function uploadImageToServer(dataUrl) {
       }
     }
   } catch (err) {
-    console.warn('Image upload to server error, using local fallback:', err);
+    console.warn('Server storage error, using local fallback:', err);
   }
   return dataUrl;
 }

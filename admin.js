@@ -188,11 +188,37 @@ function getApiUrl(path) {
 
 const storeBroadcastChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('verdanta_store_channel') : null;
 
-// Upload base64 image data URL to the server to persist as a real, lightweight image file on disk
+// Permanent Photo Storage: Cloudinary (if configured) or Hostinger Server Storage (uploads/products/)
 async function uploadImageToServer(dataUrl) {
   if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image')) {
     return dataUrl;
   }
+
+  // 1. Check if Cloudinary is configured
+  const cloudName = (localStorage.getItem('verdanta_cloudinary_cloud_name') || '').trim();
+  const uploadPreset = (localStorage.getItem('verdanta_cloudinary_upload_preset') || '').trim();
+  if (cloudName && uploadPreset) {
+    try {
+      const formData = new FormData();
+      formData.append('file', dataUrl);
+      formData.append('upload_preset', uploadPreset);
+      const cRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      if (cRes.ok) {
+        const cData = await cRes.json();
+        if (cData && cData.secure_url) {
+          console.log('[Cloudinary] Uploaded successfully:', cData.secure_url);
+          return cData.secure_url;
+        }
+      }
+    } catch (cErr) {
+      console.warn('Cloudinary upload failed, falling back to Hostinger server storage:', cErr);
+    }
+  }
+
+  // 2. Default: Hostinger Server Storage (uploads/products/)
   try {
     const res = await fetch(getApiUrl('/api/upload-image'), {
       method: 'POST',
@@ -206,7 +232,7 @@ async function uploadImageToServer(dataUrl) {
       }
     }
   } catch (err) {
-    console.warn('Image upload to server error, using local fallback:', err);
+    console.warn('Server storage error, using local fallback:', err);
   }
   return dataUrl;
 }
@@ -925,6 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderProposalsTable();
   renderOrdersTable();
   updateSidebarCounts();
+  updateStorageStatusUI();
 });
 
 // Load Data from LocalStorage
@@ -2321,3 +2348,84 @@ function showToast(message) {
     toast.classList.remove('show');
   }, 3500);
 }
+
+// =============================================================================
+// PERMANENT STORAGE HANDLERS (HOSTINGER SERVER & CLOUDINARY)
+// =============================================================================
+
+window.openStorageModal = function() {
+  const modal = document.getElementById('storageSettingsModal');
+  const cloudInput = document.getElementById('cloudinaryCloudName');
+  const presetInput = document.getElementById('cloudinaryUploadPreset');
+
+  if (cloudInput) {
+    cloudInput.value = localStorage.getItem('verdanta_cloudinary_cloud_name') || '';
+  }
+  if (presetInput) {
+    presetInput.value = localStorage.getItem('verdanta_cloudinary_upload_preset') || '';
+  }
+
+  updateStorageStatusUI();
+  if (modal) modal.classList.add('active');
+};
+
+window.closeStorageModal = function() {
+  const modal = document.getElementById('storageSettingsModal');
+  if (modal) modal.classList.remove('active');
+};
+
+window.saveStorageSettings = function() {
+  const cloudInput = document.getElementById('cloudinaryCloudName');
+  const presetInput = document.getElementById('cloudinaryUploadPreset');
+
+  const cloudName = cloudInput ? cloudInput.value.trim() : '';
+  const uploadPreset = presetInput ? presetInput.value.trim() : '';
+
+  if (cloudName && uploadPreset) {
+    localStorage.setItem('verdanta_cloudinary_cloud_name', cloudName);
+    localStorage.setItem('verdanta_cloudinary_upload_preset', uploadPreset);
+    showToast('Cloudinary CDN storage activated! Photos will upload to Cloudinary.');
+  } else {
+    localStorage.removeItem('verdanta_cloudinary_cloud_name');
+    localStorage.removeItem('verdanta_cloudinary_upload_preset');
+    showToast('Hostinger Server Storage active! Photos saved to uploads/products/.');
+  }
+
+  updateStorageStatusUI();
+  closeStorageModal();
+};
+
+window.updateStorageStatusUI = function() {
+  const cloudName = (localStorage.getItem('verdanta_cloudinary_cloud_name') || '').trim();
+  const uploadPreset = (localStorage.getItem('verdanta_cloudinary_upload_preset') || '').trim();
+
+  const statusText = document.getElementById('storageStatusText');
+  const activeBadge = document.getElementById('storageActiveBadge');
+  const cBadge = document.getElementById('cloudinaryActiveBadge');
+
+  if (cloudName && uploadPreset) {
+    if (statusText) statusText.textContent = 'Storage: Cloudinary CDN';
+    if (activeBadge) {
+      activeBadge.textContent = 'Cloudinary Active';
+      activeBadge.style.background = '#e0f2fe';
+      activeBadge.style.color = '#0369a1';
+    }
+    if (cBadge) {
+      cBadge.textContent = 'ACTIVE';
+      cBadge.style.background = '#0284c7';
+      cBadge.style.color = '#fff';
+    }
+  } else {
+    if (statusText) statusText.textContent = 'Storage: Hostinger Server';
+    if (activeBadge) {
+      activeBadge.textContent = 'Hostinger Disk Active';
+      activeBadge.style.background = '#d1fae5';
+      activeBadge.style.color = '#065f46';
+    }
+    if (cBadge) {
+      cBadge.textContent = 'OPTIONAL';
+      cBadge.style.background = '#f1f5f9';
+      cBadge.style.color = '#64748b';
+    }
+  }
+};
