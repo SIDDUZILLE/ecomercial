@@ -4,11 +4,11 @@
     "channel": "shop",
     "channelName": "Shop Collections",
     "name": "Artisan Gallery",
-    "displayName": "1. Artisan Gallery",
+    "displayName": "Artisan Gallery",
     "badge": "Collection 01",
     "description": "Earthen terracotta vases, sculpted clay urns, ambient lamps, and organic sabai grass handwoven creations.",
     "icon": "fa-palette",
-    "image": "images/artisan-gallery.jpg",
+    "image": "images/wooden-gallery.jpg",
     "subCategories": [
       "Lamps & Ambient Lighting",
       "Terracotta & Clay Crafts",
@@ -49,25 +49,26 @@
       "Table Décor",
       "Wall Décor",
       "Traditional & Heritage Décor",
-      "Sculptures & Figurines"
+      "Sculptures & Figurines",
+      "Decorative Accessories"
     ]
   },
   {
     "id": "personalization-gifting",
     "channel": "shop",
     "channelName": "Shop Collections",
-    "name": "Gifting",
-    "displayName": "4. Gifting",
+    "name": "Return Gifting",
+    "displayName": "Return Gifting",
     "badge": "Collection 04",
     "description": "Artisan return gifts, festive boxes, curated gift sets, eco-friendly gifts & bespoke keepsakes.",
     "icon": "fa-gift",
     "image": "images/personalization.jpg",
     "subCategories": [
-      "Return Gifts",
       "Festive Gifts",
-      "Curated Gift Sets",
-      "Eco-Friendly Gifts",
-      "Occasion Gifts"
+      "Birthday Gifts",
+      "Anniversary Gifting",
+      "House Warming",
+      "Wedding Gifts"
     ]
   },
   {
@@ -139,7 +140,6 @@
       "Wooden Decorative Trays",
       "Wooden Boxes & Organisers",
       "Wooden Tea-Light Holders",
-      "Figurines & Sculptural Décor",
       "Traditional Toys & Play Objects"
     ]
   },

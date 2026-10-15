@@ -1,10 +1,56 @@
-# Executables and large binaries
+# ==========================================
+# Git Ignore Configuration
+# ==========================================
+
+# Executables & Binaries
 *.exe
 cloudflared.exe
 
-# OS and editor files
+# OS & System Junk
 .DS_Store
 Thumbs.db
+ehthumbs.db
 desktop.ini
+$RECYCLE.BIN/
+
+# Editor & IDE Directories
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
+
+# Python Cache & Artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+env/
+venv/
+.venv/
+
+# Node / Package Manager (if applicable)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment & Sensitive Files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Temporary, Backup & Log Files
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+
+# User Uploaded Content & Test Chunks
+# Keeps directory structure via .gitkeep while ignoring test images
+uploads/*
+!uploads/.gitkeep
+!uploads/products/
+uploads/products/*
+!uploads/products/.gitkeep

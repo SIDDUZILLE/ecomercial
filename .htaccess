@@ -1,8 +1,8 @@
 # Hostinger Apache configuration
 RewriteEngine On
 
+# Route /admin to admin.html
+RewriteRule ^admin/?$ admin.html [L]
+
 # Route /api/* requests to api.php
-RewriteRule ^api/upload-image$ api.php?action=upload-image [QSA,L]
-RewriteRule ^api/products$ api.php?action=products [QSA,L]
-RewriteRule ^api/categories$ api.php?action=categories [QSA,L]
-RewriteRule ^api/status$ api.php?action=status [QSA,L]
+RewriteRule ^api/(.*)$ api.php?action=$1 [QSA,L]

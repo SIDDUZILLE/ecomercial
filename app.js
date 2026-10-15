@@ -197,6 +197,19 @@ function getApiUrl(path) {
 
 const storeBroadcastChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('verdanta_store_channel') : null;
 
+// Configured WhatsApp Number for customer enquiries (Default: +91 88676 88699)
+let VERDANTA_WHATSAPP_NUMBER = '918867688699';
+
+// Fetch configured WhatsApp number from backend config
+fetch(getApiUrl('/api/config'))
+  .then(res => res.json())
+  .then(cfg => {
+    if (cfg && cfg.whatsapp_number) {
+      VERDANTA_WHATSAPP_NUMBER = String(cfg.whatsapp_number).replace(/\D/g, '');
+    }
+  })
+  .catch(() => { });
+
 // Permanent Photo Storage: Cloudinary (if configured) or Hostinger Server Storage (uploads/products/)
 async function uploadImageToServer(dataUrl) {
   if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image')) {
@@ -253,15 +266,15 @@ function loadCategories() {
       if (Array.isArray(parsed) && parsed.length > 0) {
         // Explicitly remove ESG corporate solutions from shop categories
         parsed = parsed.filter(c => c.id !== 'esg-corporate-solution' && !c.name.toLowerCase().includes('esg corporate'));
-        
-        // Ensure all DEFAULT_CATEGORIES exist in parsed list
-        const existingIds = new Set(parsed.map(c => c.id));
-        DEFAULT_CATEGORIES.forEach(defCat => {
-          if (!existingIds.has(defCat.id)) {
-            parsed.push(defCat);
-          }
-        });
         PRODUCT_CATEGORIES = parsed;
+        if (typeof renderNavbarShopDropdown === 'function') renderNavbarShopDropdown();
+        if (typeof renderNavbarWholesaleDropdown === 'function') renderNavbarWholesaleDropdown();
+        if (typeof renderNavbarExportDropdown === 'function') renderNavbarExportDropdown();
+        if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
+        if (typeof renderCategoryCardsGrid === 'function') renderCategoryCardsGrid();
+        if (typeof renderProductCatalog === 'function') renderProductCatalog();
+        if (typeof renderCorporateProducts === 'function') renderCorporateProducts();
+        if (typeof populateSearchCategoryDropdown === 'function') populateSearchCategoryDropdown();
       } else {
         PRODUCT_CATEGORIES = [...DEFAULT_CATEGORIES];
       }
@@ -280,10 +293,18 @@ function loadCategories() {
         PRODUCT_CATEGORIES = serverCats.filter(c => c.id !== 'esg-corporate-solution');
         try {
           localStorage.setItem('verdanta_categories', JSON.stringify(PRODUCT_CATEGORIES));
-        } catch (e) {}
+        } catch (e) { }
+        if (typeof renderNavbarShopDropdown === 'function') renderNavbarShopDropdown();
+        if (typeof renderNavbarWholesaleDropdown === 'function') renderNavbarWholesaleDropdown();
+        if (typeof renderNavbarExportDropdown === 'function') renderNavbarExportDropdown();
+        if (typeof renderCategoryTabs === 'function') renderCategoryTabs();
+        if (typeof renderCategoryCardsGrid === 'function') renderCategoryCardsGrid();
+        if (typeof renderProductCatalog === 'function') renderProductCatalog();
+        if (typeof renderCorporateProducts === 'function') renderCorporateProducts();
+        if (typeof populateSearchCategoryDropdown === 'function') populateSearchCategoryDropdown();
       }
     })
-    .catch(() => {});
+    .catch(() => { });
 }
 
 loadCategories();
@@ -292,15 +313,15 @@ loadCategories();
 function normalizeSubCategory(catId, subItem) {
   if (!subItem) return 'Featured Creations';
   const clean = String(subItem).trim();
-  
+
   // If clean exact matches an existing defined subcategory, keep it pristine
   const cat = PRODUCT_CATEGORIES.find(c => c.id === catId);
   if (cat && Array.isArray(cat.subCategories) && cat.subCategories.includes(clean)) {
     return clean;
   }
-  
+
   const lower = clean.toLowerCase();
-  
+
   if (catId === 'artisan-gallery') {
     if (lower.includes('lamp') || lower.includes('light')) return 'Lamps & Ambient Lighting';
     if (lower.includes('terracotta') || lower.includes('clay') || lower.includes('pot') || lower.includes('urn')) return 'Terracotta & Clay Crafts';
@@ -327,12 +348,24 @@ function normalizeSubCategory(catId, subItem) {
   }
   // Corporate Gifting (6 subcategories)
   else if (catId === 'corporate-gifting') {
+    const exactList = [
+      'Employee Welcome & Onboarding',
+      'Employee Recognition & Milestones',
+      'Festive & Celebration Gifting',
+      'Client, Partner & Executive Gifting',
+      'Sustainable & ESG Gifting',
+      'Curated & Custom Corporate Gift Sets'
+    ];
+    const direct = exactList.find(s => s.toLowerCase() === lower);
+    if (direct) return direct;
+
     if (lower.includes('welcome') || lower.includes('onboard')) return 'Employee Welcome & Onboarding';
-    if (lower.includes('recogni') || lower.includes('milestone')) return 'Employee Recognition & Milestones';
-    if (lower.includes('festive') || lower.includes('celebrat')) return 'Festive & Celebration Gifting';
-    if (lower.includes('partner') || lower.includes('executive') || lower.includes('client')) return 'Client, Partner & Executive Gifting';
+    if (lower.includes('milestone') || lower.includes('recogni') || lower.includes('trophy') || lower.includes('plaque')) return 'Employee Recognition & Milestones';
+    if (lower.includes('festive') || lower.includes('celebrat') || lower.includes('diwali') || lower.includes('deepam')) return 'Festive & Celebration Gifting';
+    if (lower.includes('partner') || (lower.includes('client') && lower.includes('executive')) || lower.includes('urli')) return 'Client, Partner & Executive Gifting';
     if (lower.includes('sustain') || lower.includes('esg')) return 'Sustainable & ESG Gifting';
-    if (lower.includes('curated') || lower.includes('custom')) return 'Curated & Custom Corporate Gift Sets';
+    if (lower.includes('curated') || lower.includes('custom') || lower.includes('hamper')) return 'Curated & Custom Corporate Gift Sets';
+    return clean;
   }
   // Wholesale Wood
   else if (catId === 'wholesale-wood') {
@@ -365,7 +398,7 @@ function normalizeSubCategory(catId, subItem) {
     if (lower.includes('candle') || lower.includes('tea-light') || lower.includes('holder')) return 'Candle / Tea-Light Holders';
     if (lower.includes('music') || lower.includes('set')) return 'Indian Musician Sets';
   }
-  
+
   return clean;
 }
 
@@ -397,6 +430,20 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+function escapeAttr(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+window.escapeHtml = escapeHtml;
+window.escapeAttr = escapeAttr;
+
 
 function normalizeCategoryId(catNameOrId) {
   if (!catNameOrId) return 'artisan-gallery';
@@ -469,296 +516,11 @@ function normalizeProduct(p) {
   } else {
     p.discountPercent = 0;
   }
+  p.outOfStock = Boolean(p.outOfStock);
   return p;
 }
 
 const DEFAULT_PRODUCTS = [
-  // 1) Artisan Gallery: lamp, terracotta clay, natural grass and handwoven
-  {
-    id: 'art-01',
-    categoryId: 'artisan-gallery',
-    category: 'Artisan Gallery',
-    subItem: 'Lamp',
-    name: 'Carved Teak & Linen Artisan Table Lamp',
-    title: 'Carved Teak & Linen Artisan Table Lamp',
-    mrp: 5999,
-    mrpFormatted: '₹5,999',
-    price: 4899,
-    priceFormatted: '₹4,899',
-    badge: 'Artisan Signature',
-    image: 'images/hero.jpg',
-    material: 'Reclaimed Teak Wood, Hand-loomed Linen Shade, Brass Fittings',
-    origin: 'Jaipur, Rajasthan',
-    description: 'Masterfully hand-carved acanthus scroll wooden base paired with an organic textured linen drum shade that casts a warm, soothing ambient glow.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'art-02',
-    categoryId: 'artisan-gallery',
-    category: 'Artisan Gallery',
-    subItem: 'Terracotta Clay',
-    name: 'Heritage Peacock Handpainted Terracotta Urn',
-    title: 'Heritage Peacock Handpainted Terracotta Urn',
-    mrp: 2999,
-    mrpFormatted: '₹2,999',
-    price: 2450,
-    priceFormatted: '₹2,450',
-    badge: 'Bestseller',
-    image: 'images/terracotta-pot.jpg',
-    material: 'Natural Red Clay, Mineral Pigments, Hand-burnished',
-    origin: 'Molela Cluster, Rajasthan',
-    description: 'Wheel-thrown natural earthen clay pot featuring traditional miniature peacock and lotus floral patterns painted with mineral pigments.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'art-03',
-    categoryId: 'artisan-gallery',
-    category: 'Artisan Gallery',
-    subItem: 'Natural Grass and Handwoven Gallery',
-    name: 'Sabai Grass Lidded Handwoven Basket',
-    title: 'Sabai Grass Lidded Handwoven Basket',
-    mrp: 2200,
-    mrpFormatted: '₹2,200',
-    price: 1850,
-    priceFormatted: '₹1,850',
-    badge: 'Eco Certified',
-    image: 'images/grass-basket.jpg',
-    material: 'Wild Harvested Sabai Grass, Cotton Thread',
-    origin: 'Mayurbhanj, Odisha',
-    description: 'Tight coiling technique handwoven by indigenous women artisans. Durable, fragrant natural grass with minimalist geometric weave.',
-    createdAt: new Date().toISOString()
-  },
-
-  // 2) Wooden Gallery: clock, key chain, toys, tea light candle, decore products
-  {
-    id: 'wood-01',
-    categoryId: 'wooden-gallery',
-    category: 'Wooden Gallery',
-    subItem: 'Clock',
-    name: 'Artisanal Carved Teakwood Desk Clock',
-    title: 'Artisanal Carved Teakwood Desk Clock',
-    mrp: 3999,
-    mrpFormatted: '₹3,999',
-    price: 3200,
-    priceFormatted: '₹3,200',
-    badge: 'Limited Edition',
-    image: 'images/wooden-gallery.jpg',
-    material: 'Solid Indian Teak, Brass Hands & Roman Numerals',
-    origin: 'Saharanpur, Uttar Pradesh',
-    description: 'Carved from single-source aged teak wood with paisley borders, Roman brass numbering, and silent sweeping quartz movement.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'wood-02',
-    categoryId: 'wooden-gallery',
-    category: 'Wooden Gallery',
-    subItem: 'Key Chain',
-    name: 'Hand-Carved Wooden Elephant & Leather Keychain',
-    title: 'Hand-Carved Wooden Elephant & Leather Keychain',
-    mrp: 650,
-    mrpFormatted: '₹650',
-    price: 490,
-    priceFormatted: '₹490',
-    badge: 'Craft Accessory',
-    image: 'images/wooden-gallery.jpg',
-    material: 'Rosewood, Vegetable-Tanned Leather, Antique Brass Ring',
-    origin: 'Saharanpur Wood Craft Guild',
-    description: 'Delicate relief-carved elephant medallion symbolising wisdom and prosperity, finished with genuine leather fringe and sturdy brass clip.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'wood-03',
-    categoryId: 'wooden-gallery',
-    category: 'Wooden Gallery',
-    subItem: 'Toys',
-    name: 'Traditional Handpainted Wooden Bird Figurine',
-    title: 'Traditional Handpainted Wooden Bird Figurine',
-    mrp: 1250,
-    mrpFormatted: '₹1,250',
-    price: 950,
-    priceFormatted: '₹950',
-    badge: 'Generational Craft',
-    image: 'images/wooden-gallery.jpg',
-    material: 'Wrightia Tinctoria Wood, Non-toxic Lacquer Colors',
-    origin: 'Channapatna, Karnataka',
-    description: 'Crafted following 200-year-old GI-tagged lacquerware woodturning techniques. Safe, smooth, and vibrant decorative toy figurine.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'wood-04',
-    categoryId: 'wooden-gallery',
-    category: 'Wooden Gallery',
-    subItem: 'Tea Light Candle',
-    name: 'Turned Rosewood Tea Light Candle Holder',
-    title: 'Turned Rosewood Tea Light Candle Holder',
-    mrp: 990,
-    mrpFormatted: '₹990',
-    price: 750,
-    priceFormatted: '₹750',
-    badge: 'Warm Ambiance',
-    image: 'images/wooden-gallery.jpg',
-    material: 'Indian Sheesham / Rosewood, Natural Wax Coating',
-    origin: 'Hoshiarpur Woodturners',
-    description: 'Gracefully turned wooden holder displaying rich natural wood grain. Includes a complimentary pure soy tea light.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'wood-05',
-    categoryId: 'wooden-gallery',
-    category: 'Wooden Gallery',
-    subItem: 'Decor Products',
-    name: 'Hand-Carved Teakwood Floral Wall & Table Plaque',
-    title: 'Hand-Carved Teakwood Floral Wall & Table Plaque',
-    price: 2150,
-    priceFormatted: '₹2,150',
-    badge: 'Artisan Decor',
-    image: 'images/wooden-gallery.jpg',
-    material: 'Seasoned Teakwood, Natural Matte Wax Finish',
-    origin: 'Kashmir Woodcraft Cluster',
-    description: 'Intricate deep jali relief carving depicting traditional chinar and vine motifs, versatile for console or wall display.',
-    createdAt: new Date().toISOString()
-  },
-
-  // 3) Premium Home Decor: table decor, wall hanging decore, decorative accessories
-  {
-    id: 'decor-01',
-    categoryId: 'premium-home-decor',
-    category: 'Premium Home Decor',
-    subItem: 'Table Decor',
-    name: 'Hammered Brass Tabletop Floating Urli Bowl',
-    title: 'Hammered Brass Tabletop Floating Urli Bowl',
-    price: 3800,
-    priceFormatted: '₹3,800',
-    badge: 'Luxury Tabletop',
-    image: 'images/premium-decor.jpg',
-    material: 'Pure Hand-hammered Solid Brass',
-    origin: 'Moradabad Metalcraft, UP',
-    description: 'Heirloom-grade brass urli bowl designed for floating flower blossoms and tea light candles. Timeless Indian festive opulence.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'decor-02',
-    categoryId: 'premium-home-decor',
-    category: 'Premium Home Decor',
-    subItem: 'Wall Hanging Decor',
-    name: 'Geometric Brass & Natural Jute Wall Hanging Tapestry',
-    title: 'Geometric Brass & Natural Jute Wall Hanging Tapestry',
-    price: 6400,
-    priceFormatted: '₹6,400',
-    badge: 'Curator Choice',
-    image: 'images/premium-decor.jpg',
-    material: 'Burnished Brass Plates, Hand-spun Golden Jute, Wooden Dowel',
-    origin: 'Bengal Handloom & Metal Atelier',
-    description: 'A contemporary dialogue between raw tactile jute fibers and warm reflective brass plates, creating an architectural statement piece.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'decor-03',
-    categoryId: 'premium-home-decor',
-    category: 'Premium Home Decor',
-    subItem: 'Decorative Accessories',
-    name: 'Fluted Ceramic & Brushed Brass Accent Ensemble',
-    title: 'Fluted Ceramic & Brushed Brass Accent Ensemble',
-    price: 2950,
-    priceFormatted: '₹2,950',
-    badge: 'Contemporary Heritage',
-    image: 'images/premium-decor.jpg',
-    material: 'Fluted Ceramic Stoneware, Machined Brass',
-    origin: 'Khurja Pottery Cluster',
-    description: 'A minimal silhouette accent piece blending tactile ceramic fluting with warm brass accents for modern credenzas and mantels.',
-    createdAt: new Date().toISOString()
-  },
-
-  // 4) Corporate Gifting (ESG / Sustainable & Custom Hampers)
-  {
-    id: 'esg-01',
-    categoryId: 'corporate-gifting',
-    category: 'Corporate Gifting',
-    subItem: 'Sustainable & ESG Gifting',
-    name: 'Eco-Growth Employee Appreciation Gift Kit',
-    title: 'Eco-Growth Employee Appreciation Gift Kit',
-    price: 1950,
-    mrp: 2650,
-    mrpFormatted: '₹2,650',
-    priceFormatted: '₹1,950',
-    badge: 'ESG Certified',
-    image: 'images/esg-corporate.jpg',
-    material: 'Plantable Seed Paper, Pure Copper, Bamboo, Beeswax',
-    origin: 'Verdanta Sustainable Labs',
-    description: 'Complete sustainable kit containing an embossed seed-paper journal, hand-hammered pure copper tumbler, bamboo pen, and fragrant beeswax candle.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'esg-02',
-    categoryId: 'corporate-gifting',
-    category: 'Corporate Gifting',
-    subItem: 'Curated & Custom Corporate Gift Sets',
-    name: 'Executive Client Customization Hamper',
-    title: 'Executive Client Customization Hamper',
-    price: 3600,
-    mrp: 4900,
-    mrpFormatted: '₹4,900',
-    priceFormatted: '₹3,600',
-    badge: 'Corporate Bespoke',
-    image: 'images/corporate-lifestyle.jpg',
-    material: 'Recycled Kraft Gift Box, Forest Green Ribbon, Custom Branding',
-    origin: 'Verdanta Corporate Atelier',
-    description: 'Designed for enterprise partners. Includes custom corporate logo debossing, personalized executive greeting card, and zero-plastic packaging.',
-    createdAt: new Date().toISOString()
-  },
-
-  // 5) Personalization Gifting
-  {
-    id: 'pers-01',
-    categoryId: 'personalization-gifting',
-    category: 'Personalization Gifting',
-    subItem: 'Personalization Gifting',
-    name: 'Bespoke Monogram Laser-Engraved Keepsake Box & Leather Set',
-    title: 'Bespoke Monogram Laser-Engraved Keepsake Box & Leather Set',
-    price: 4200,
-    priceFormatted: '₹4,200',
-    badge: 'Custom Engraved',
-    image: 'images/personalization.jpg',
-    material: 'Solid Indian Walnut, Top-grain Vegetable Leather, Hand-Hammered Brass',
-    origin: 'Jaipur Bespoke Studio',
-    description: 'Personalized keepsake slide-lid box with custom botanical calligraphy engraving, monogrammed leather passport sleeve, and hammered brass bookmark.',
-    createdAt: new Date().toISOString()
-  },
-
-  // 6) Corporate Gifting
-  {
-    id: 'corp-01',
-    categoryId: 'corporate-gifting',
-    category: 'Corporate Gifting',
-    subItem: 'Employee Welcome & Onboarding',
-    name: 'Executive Employee Onboarding Artisan Hamper',
-    title: 'Executive Employee Onboarding Artisan Hamper',
-    price: 3499,
-    priceFormatted: '₹3,499',
-    badge: 'Enterprise Best',
-    image: 'images/corporate-lifestyle.jpg',
-    material: 'Natural Bamboo, Pure Copper Tumbler, Reclaimed Wood Desk Clock',
-    origin: 'Verdanta Corporate Studio',
-    description: 'Heirloom welcome gift set designed to welcome new leaders and celebrate team loyalty.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'corp-02',
-    categoryId: 'corporate-gifting',
-    category: 'Corporate Gifting',
-    subItem: 'Festive & Celebration Gifting',
-    name: 'Heirloom Brass Deepam & Confectionery Festive Box',
-    title: 'Heirloom Brass Deepam & Confectionery Festive Box',
-    price: 4200,
-    priceFormatted: '₹4,200',
-    badge: 'Festive B2B',
-    image: 'images/premium-decor.jpg',
-    material: 'Pure Hand-Cast Brass, Hand-burnished Finish',
-    origin: 'Moradabad Metal Guild',
-    description: 'Opulent Diwali and festive celebration corporate gift box with traditional brass deepams.',
-    createdAt: new Date().toISOString()
-  },
-
   // 7) Wholesale Wood Crafts
   {
     id: 'wh-wood-01',
@@ -793,41 +555,7 @@ const DEFAULT_PRODUCTS = [
     createdAt: new Date().toISOString()
   },
 
-  // 8) Wholesale Metal Crafts
-  {
-    id: 'wh-metal-01',
-    categoryId: 'wholesale-metal',
-    category: 'Wholesale Metal Crafts',
-    subItem: 'Radha Krishna',
-    name: 'Lost-Wax Antique Brass Radha Krishna Murti (Bulk Lot)',
-    title: 'Lost-Wax Antique Brass Radha Krishna Murti (Bulk Lot)',
-    price: 5200,
-    priceFormatted: '₹5,200',
-    badge: 'Wholesale B2B',
-    image: 'images/premium-decor.jpg',
-    material: 'Pure Hand-cast Brass, Antique Olive Patina',
-    origin: 'Moradabad Metal Guild',
-    description: 'Finely sculpted divine couple icon with ornate lotus pedestal and flute details.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'wh-metal-02',
-    categoryId: 'wholesale-metal',
-    category: 'Wholesale Metal Crafts',
-    subItem: 'Musician Sets',
-    name: 'Tribal Dhokra Folk Musician Set (Pack of 3)',
-    title: 'Tribal Dhokra Folk Musician Set (Pack of 3)',
-    price: 3800,
-    priceFormatted: '₹3,800',
-    badge: 'Wholesale B2B',
-    image: 'images/wholesale.jpg',
-    material: 'Hand-molded Bell Metal Alloy, Raw Earth Patina',
-    origin: 'Bastar Artisan Guild',
-    description: 'Primitive lost-wax casting preserving ancient craft traditions for lifestyle boutiques.',
-    createdAt: new Date().toISOString()
-  },
-
-  // 9) Export Wood Crafts
+  // Export Wood Crafts
   {
     id: 'exp-wood-01',
     categoryId: 'export-wood',
@@ -896,6 +624,14 @@ const DEFAULT_PRODUCTS = [
   }
 ];
 
+// List of legacy mock IDs that should never be shown or re-injected
+const LEGACY_REMOVED_IDS = new Set([
+  'art-01', 'art-02', 'art-03',
+  'wood-01', 'wood-02', 'wood-03', 'wood-04', 'wood-05',
+  'decor-01', 'decor-02', 'decor-03',
+  'corp-01', 'corp-02', 'corp-03', 'corp-04', 'esg-01', 'esg-02', 'pers-01', 'wh-metal-01', 'wh-metal-02'
+]);
+
 // Load dynamic products from localStorage or initialize with defaults
 let PRODUCTS_DATA = [];
 try {
@@ -903,27 +639,24 @@ try {
   if (stored) {
     const parsed = JSON.parse(stored);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      PRODUCTS_DATA = parsed.map(normalizeProduct);
-      const existingIds = new Set(PRODUCTS_DATA.map(p => p.id));
-      let addedNew = false;
-      DEFAULT_PRODUCTS.forEach(sp => {
-        if (!existingIds.has(sp.id)) {
-          PRODUCTS_DATA.push(normalizeProduct(sp));
-          addedNew = true;
-        }
-      });
+      // Purge any legacy dummy products from cache
+      PRODUCTS_DATA = parsed
+        .filter(p => !LEGACY_REMOVED_IDS.has(p.id))
+        .map(normalizeProduct);
       try {
         localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
-      } catch (e) {}
+      } catch (e) { }
     } else {
-      PRODUCTS_DATA = DEFAULT_PRODUCTS.map(normalizeProduct);
+      PRODUCTS_DATA = DEFAULT_PRODUCTS.filter(p => !LEGACY_REMOVED_IDS.has(p.id)).map(normalizeProduct);
     }
   } else {
-    PRODUCTS_DATA = DEFAULT_PRODUCTS.map(normalizeProduct);
-    localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
+    PRODUCTS_DATA = DEFAULT_PRODUCTS.filter(p => !LEGACY_REMOVED_IDS.has(p.id)).map(normalizeProduct);
+    try {
+      localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
+    } catch (e) { }
   }
 } catch (e) {
-  PRODUCTS_DATA = DEFAULT_PRODUCTS.map(normalizeProduct);
+  PRODUCTS_DATA = DEFAULT_PRODUCTS.filter(p => !LEGACY_REMOVED_IDS.has(p.id)).map(normalizeProduct);
 }
 
 // =============================================================================
@@ -933,6 +666,8 @@ try {
 let cartState = JSON.parse(localStorage.getItem('verdanta_cart')) || [];
 let wishlistState = JSON.parse(localStorage.getItem('verdanta_wishlist')) || [];
 let currentCategoryFilter = 'all';
+let currentSubCategoryFilter = null;
+let currentSearchQuery = '';
 
 // =============================================================================
 // CATEGORY SYNCHRONIZATION: NAVBAR SHOP DROPDOWN, TABS, CARDS & CATALOG
@@ -952,7 +687,7 @@ function renderNavbarShopDropdown() {
 
     return `
       <div class="mega-col">
-        <h4 class="mega-title">${escapeHtml(catTitle)}</h4>
+        <h4 class="mega-title" style="cursor:pointer;" onclick="filterAndScroll('${escapeHtml(cat.name)}')">${escapeHtml(catTitle)}</h4>
         <ul class="mega-list">
           ${subCats.slice(0, 8).map(sub => `
             <li>
@@ -979,15 +714,127 @@ function renderNavbarShopDropdown() {
   });
 }
 
+// 1b. Render Wholesale Dropdown in Customer Navbar (Dynamic B2B Wood & Metal Categories)
+function renderNavbarWholesaleDropdown() {
+  const grid = document.getElementById('wholesaleDropdownGrid');
+  if (!grid) return;
+
+  const wholesaleCats = PRODUCT_CATEGORIES.filter(c => (c.channel || '').toLowerCase() === 'wholesale');
+  if (wholesaleCats.length === 0) return;
+
+  grid.innerHTML = wholesaleCats.map(cat => {
+    const subCats = getAllSubCategoriesForCategory(cat.id);
+    let colHeader = cat.name.toUpperCase();
+    if (colHeader.includes('WOOD')) colHeader = 'WOOD';
+    else if (colHeader.includes('METAL')) colHeader = 'METAL';
+
+    return `
+      <div class="split-menu-col">
+        <h4 class="split-menu-header">
+          <a href="#categories" class="split-header-link" data-category="${escapeHtml(cat.name)}" onclick="event.preventDefault(); filterAndScroll('${escapeHtml(cat.name)}');">
+            ${escapeHtml(colHeader)}
+          </a>
+        </h4>
+        <ul class="split-menu-list">
+          ${subCats.map((sub, sIdx) => `
+            <li>
+              <a href="#categories" data-category="${escapeHtml(cat.name)}" data-sub="${escapeHtml(sub)}">
+                ${sIdx + 1}. ${escapeHtml(sub)}
+              </a>
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.split-header-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const catName = link.getAttribute('data-category');
+      if (catName) {
+        filterAndScroll(catName);
+      }
+    });
+  });
+
+  grid.querySelectorAll('.split-menu-list a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const catName = link.getAttribute('data-category');
+      const subName = link.getAttribute('data-sub');
+      if (catName) {
+        filterAndScroll(catName, subName);
+      }
+    });
+  });
+}
+
+// 1c. Render Export Dropdown in Customer Navbar (Dynamic Global Export Wood & Metal Categories)
+function renderNavbarExportDropdown() {
+  const grid = document.getElementById('exportDropdownGrid');
+  if (!grid) return;
+
+  const exportCats = PRODUCT_CATEGORIES.filter(c => (c.channel || '').toLowerCase() === 'export');
+  if (exportCats.length === 0) return;
+
+  grid.innerHTML = exportCats.map(cat => {
+    const subCats = getAllSubCategoriesForCategory(cat.id);
+    let colHeader = cat.name.toUpperCase();
+    if (colHeader.includes('WOOD')) colHeader = 'WOOD';
+    else if (colHeader.includes('METAL')) colHeader = 'METAL';
+
+    return `
+      <div class="split-menu-col">
+        <h4 class="split-menu-header">
+          <a href="#categories" class="split-header-link" data-category="${escapeHtml(cat.name)}" onclick="event.preventDefault(); filterAndScroll('${escapeHtml(cat.name)}');">
+            ${escapeHtml(colHeader)}
+          </a>
+        </h4>
+        <ul class="split-menu-list">
+          ${subCats.map((sub, sIdx) => `
+            <li>
+              <a href="#categories" data-category="${escapeHtml(cat.name)}" data-sub="${escapeHtml(sub)}">
+                ${sIdx + 1}. ${escapeHtml(sub)}
+              </a>
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.split-header-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const catName = link.getAttribute('data-category');
+      if (catName) {
+        filterAndScroll(catName);
+      }
+    });
+  });
+
+  grid.querySelectorAll('.split-menu-list a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const catName = link.getAttribute('data-category');
+      const subName = link.getAttribute('data-sub');
+      if (catName) {
+        filterAndScroll(catName, subName);
+      }
+    });
+  });
+}
+
 // 2. Render Category Filter Tabs
 function renderCategoryTabs() {
   const container = document.querySelector('.category-tabs');
   if (!container) return;
 
   const tabsHtml = [
-    `<button class="tab-btn ${currentCategoryFilter === 'all' ? 'active' : ''}" data-filter="all">All Collections</button>`,
+    `<button class="tab-btn ${currentCategoryFilter === 'all' && !currentSubCategoryFilter ? 'active' : ''}" data-filter="all">All Collections</button>`,
     ...PRODUCT_CATEGORIES.map((cat, idx) => {
-      const isAct = (currentCategoryFilter === cat.id || currentCategoryFilter === cat.name || normalizeCategoryId(currentCategoryFilter) === cat.id);
+      const isAct = (!currentSubCategoryFilter && (currentCategoryFilter === cat.id || currentCategoryFilter === cat.name || normalizeCategoryId(currentCategoryFilter) === cat.id));
       return `<button class="tab-btn ${isAct ? 'active' : ''}" data-filter="${escapeHtml(cat.name)}">${escapeHtml(cat.displayName || `${idx + 1}. ${cat.name}`)}</button>`;
     })
   ].join('');
@@ -1000,13 +847,37 @@ function renderCategoryTabs() {
       container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const filter = btn.getAttribute('data-filter');
+      currentSubCategoryFilter = null;
+      currentSearchQuery = '';
+      const catInput = document.getElementById('catalogSearchInput');
+      if (catInput) catInput.value = '';
+      const banner = document.getElementById('catalogActiveFilterBanner');
+      if (banner) banner.style.display = 'none';
       currentCategoryFilter = (filter === 'all') ? 'all' : normalizeCategoryId(filter);
       renderProductCatalog();
     });
   });
 }
 
-// 3. Render "Shop by Collection" Visual Cards (Exclusively 4 Shop Collections)
+// Helper to resolve the best cover image for a category
+function getCategoryCoverImage(cat) {
+  if (cat && cat.image && typeof cat.image === 'string' && cat.image.trim()) {
+    return cat.image.trim();
+  }
+  // Dynamic fallback: look for the first/latest product photo belonging to this category
+  if (Array.isArray(PRODUCTS_DATA)) {
+    const catProd = PRODUCTS_DATA.find(p => {
+      const pCatId = p.categoryId || normalizeCategoryId(p.category);
+      return pCatId === cat.id && p.image && typeof p.image === 'string' && p.image.trim();
+    });
+    if (catProd && catProd.image) {
+      return catProd.image.trim();
+    }
+  }
+  return 'images/wooden-gallery.jpg';
+}
+
+// 3. Render "Shop by Collection" Visual Cards (Exclusively Shop Collections)
 function renderCategoryCardsGrid() {
   const container = document.querySelector('.category-cards-grid');
   if (!container) return;
@@ -1015,23 +886,29 @@ function renderCategoryCardsGrid() {
 
   container.innerHTML = shopCats.map((cat, idx) => {
     const subCats = getAllSubCategoriesForCategory(cat.id);
-    const subListHtml = subCats.slice(0, 5).map(s => `<li>• ${escapeHtml(s)}</li>`).join('');
+    const subListHtml = subCats.slice(0, 6).map(s => `
+      <li>
+        <button type="button" class="subcategory-pill-btn" onclick="event.stopPropagation(); filterAndScroll('${escapeHtml(cat.name)}', '${escapeHtml(s)}')">
+          <i class="fa-solid fa-angle-right"></i> ${escapeHtml(s)}
+        </button>
+      </li>
+    `).join('');
     const badgeText = cat.badge || `Collection 0${idx + 1}`;
-    const imgUrl = cat.image || 'images/wooden-gallery.jpg';
+    const imgUrl = getCategoryCoverImage(cat);
 
     return `
-      <div class="category-card" data-category="${escapeHtml(cat.name)}">
+      <div class="category-card" data-category="${escapeHtml(cat.name)}" onclick="filterAndScroll('${escapeHtml(cat.name)}')">
         <div class="category-card-image-wrap">
           <img src="${imgUrl}" alt="${escapeHtml(cat.name)}" class="category-card-img" loading="lazy" onerror="this.src='images/wooden-gallery.jpg'">
           <div class="category-tag-badge">${escapeHtml(badgeText)}</div>
         </div>
         <div class="category-card-content">
           <h3 class="category-card-title">${escapeHtml(cat.name.toUpperCase())}</h3>
-          <ul class="subcategories-tag-list">
+          <ul class="subcategories-tag-list" onclick="event.stopPropagation()">
             ${subListHtml}
           </ul>
           <p class="category-card-snippet">${escapeHtml(cat.description || `Artisanal handcrafted ${cat.name} creations.`)}</p>
-          <button class="category-card-btn" onclick="filterAndScroll('${escapeHtml(cat.name)}')">EXPLORE ${escapeHtml(cat.name.toUpperCase())} <i class="fa-solid fa-arrow-right"></i></button>
+          <button type="button" class="category-card-btn" onclick="event.stopPropagation(); filterAndScroll('${escapeHtml(cat.name)}')">EXPLORE ${escapeHtml(cat.name.toUpperCase())} <i class="fa-solid fa-arrow-right"></i></button>
         </div>
       </div>
     `;
@@ -1039,61 +916,137 @@ function renderCategoryCardsGrid() {
 }
 
 let lastSyncedProductsJson = '';
+let lastSyncedCategoriesJson = '';
 
 // Storefront dynamic reloader for immediate synchronization with disk & server
 async function syncStorefrontWithServer() {
+  let hasChanges = false;
+
+  // 1. Sync Categories from server
   try {
-    const res = await fetch(getApiUrl('/api/products'));
+    const catRes = await fetch(getApiUrl('/api/categories'));
+    if (catRes.ok) {
+      const serverCats = await catRes.json();
+      if (Array.isArray(serverCats) && serverCats.length > 0) {
+        const catStr = JSON.stringify(serverCats);
+        if (catStr !== lastSyncedCategoriesJson) {
+          lastSyncedCategoriesJson = catStr;
+          PRODUCT_CATEGORIES = serverCats.filter(c => c.id !== 'esg-corporate-solution');
+          try {
+            localStorage.setItem('verdanta_categories', JSON.stringify(PRODUCT_CATEGORIES));
+          } catch (e) { }
+          hasChanges = true;
+        }
+      }
+    }
+  } catch (cErr) { }
+
+  // 2. Sync Products from server
+  try {
+    let res = await fetch(getApiUrl('/api/products'));
+    if (!res.ok) {
+      res = await fetch('products.json');
+    }
     if (res.ok) {
       const serverProducts = await res.json();
       if (Array.isArray(serverProducts) && serverProducts.length > 0) {
-        const str = JSON.stringify(serverProducts);
-        if (str !== lastSyncedProductsJson) {
-          lastSyncedProductsJson = str;
-          PRODUCTS_DATA = serverProducts.map(normalizeProduct);
+        const cleanedProds = serverProducts.filter(p => !LEGACY_REMOVED_IDS.has(p.id)).map(normalizeProduct);
+        const prodStr = JSON.stringify(cleanedProds);
+        if (prodStr !== lastSyncedProductsJson) {
+          lastSyncedProductsJson = prodStr;
+          PRODUCTS_DATA = cleanedProds;
           try {
             localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
-          } catch (e) {}
-          renderNavbarShopDropdown();
-          renderCategoryTabs();
-          renderCategoryCardsGrid();
-          renderProductCatalog();
+          } catch (e) { }
+          hasChanges = true;
         }
-        return;
       }
     }
   } catch (err) {
-    // Server fetch fallback to local storage
+    try {
+      const fb = await fetch('products.json');
+      if (fb.ok) {
+        const serverProducts = await fb.json();
+        if (Array.isArray(serverProducts) && serverProducts.length > 0) {
+          const cleanedProds = serverProducts.filter(p => !LEGACY_REMOVED_IDS.has(p.id)).map(normalizeProduct);
+          const prodStr = JSON.stringify(cleanedProds);
+          if (prodStr !== lastSyncedProductsJson) {
+            lastSyncedProductsJson = prodStr;
+            PRODUCTS_DATA = cleanedProds;
+            try {
+              localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
+            } catch (e) { }
+            hasChanges = true;
+          }
+        }
+      }
+    } catch (e) { }
   }
 
-  // Fallback to local storage
-  try {
-    const raw = JSON.parse(localStorage.getItem('verdanta_products'));
-    if (Array.isArray(raw) && raw.length > 0) {
-      const str = JSON.stringify(raw);
-      if (str !== lastSyncedProductsJson) {
-        lastSyncedProductsJson = str;
-        PRODUCTS_DATA = raw.map(normalizeProduct);
-        renderNavbarShopDropdown();
-        renderCategoryTabs();
-        renderCategoryCardsGrid();
-        renderProductCatalog();
+  // Fallback to local storage if server fetch was skipped or offline
+  if (!hasChanges) {
+    try {
+      const rawCats = JSON.parse(localStorage.getItem('verdanta_categories'));
+      if (Array.isArray(rawCats) && rawCats.length > 0) {
+        const catStr = JSON.stringify(rawCats);
+        if (catStr !== lastSyncedCategoriesJson) {
+          lastSyncedCategoriesJson = catStr;
+          PRODUCT_CATEGORIES = rawCats.filter(c => c.id !== 'esg-corporate-solution');
+          hasChanges = true;
+        }
       }
-    }
-  } catch (err) {}
+    } catch (e) { }
+
+    try {
+      const rawProds = JSON.parse(localStorage.getItem('verdanta_products'));
+      if (Array.isArray(rawProds) && rawProds.length > 0) {
+        const cleanedProds = rawProds.filter(p => !LEGACY_REMOVED_IDS.has(p.id)).map(normalizeProduct);
+        const prodStr = JSON.stringify(cleanedProds);
+        if (prodStr !== lastSyncedProductsJson) {
+          lastSyncedProductsJson = prodStr;
+          PRODUCTS_DATA = cleanedProds;
+          try {
+            localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
+          } catch (e) { }
+          hasChanges = true;
+        }
+      }
+    } catch (e) { }
+  }
+
+  if (hasChanges) {
+    renderNavbarShopDropdown();
+    renderNavbarWholesaleDropdown();
+    renderNavbarExportDropdown();
+    renderCategoryTabs();
+    renderCategoryCardsGrid();
+    renderProductCatalog();
+    renderCorporateProducts();
+    if (typeof populateSearchCategoryDropdown === 'function') populateSearchCategoryDropdown();
+  }
 }
 
 function reloadStorefrontProducts() {
   syncStorefrontWithServer();
 }
 
+// Initial trigger to begin background fetching as early as possible
+syncStorefrontWithServer();
+
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
   loadCategories();
   renderNavbarShopDropdown();
+  renderNavbarWholesaleDropdown();
+  renderNavbarExportDropdown();
   renderCategoryTabs();
   renderCategoryCardsGrid();
   renderProductCatalog();
+  renderCorporateProducts();
+  fetchCorporateCards();
+  renderHeroSection();
+  fetchHeroData();
+  if (typeof populateSearchCategoryDropdown === 'function') populateSearchCategoryDropdown();
   updateCartUI();
   updateWishlistBadge();
   setupEventListeners();
@@ -1107,20 +1060,25 @@ document.addEventListener('DOMContentLoaded', () => {
     storeBroadcastChannel.onmessage = (e) => {
       syncStorefrontWithServer();
       loadCategories();
+      fetchCorporateCards();
+      fetchHeroData();
     };
   }
 
   // Listen for admin changes across tabs or local storage dispatch
   window.addEventListener('storage', (e) => {
-    if (!e.key || e.key === 'verdanta_categories') {
+    if (!e.key || e.key === 'verdanta_categories' || e.key === 'verdanta_cat_sync_trigger') {
       loadCategories();
-      renderNavbarShopDropdown();
-      renderCategoryTabs();
-      renderCategoryCardsGrid();
-      renderProductCatalog();
+      syncStorefrontWithServer();
     }
     if (!e.key || e.key === 'verdanta_products' || e.key === 'verdanta_sync_trigger') {
       syncStorefrontWithServer();
+    }
+    if (!e.key || e.key === 'verdanta_corporate_cards' || e.key === 'verdanta_corp_trigger') {
+      fetchCorporateCards();
+    }
+    if (!e.key || e.key === 'verdanta_hero_data' || e.key === 'verdanta_hero_trigger') {
+      fetchHeroData();
     }
   });
 
@@ -1130,16 +1088,19 @@ document.addEventListener('DOMContentLoaded', () => {
       renderCategoryTabs();
       renderCategoryCardsGrid();
       renderProductCatalog();
+      renderCorporateProducts();
     }
   });
 
   // Re-sync instantly whenever user switches back to storefront tab
   window.addEventListener('focus', () => {
     syncStorefrontWithServer();
+    fetchHeroData();
   });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
       syncStorefrontWithServer();
+      fetchHeroData();
     }
   });
 
@@ -1184,9 +1145,23 @@ function setupEventListeners() {
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
-      performSearch(e.target.value);
+      const catSelect = document.getElementById('searchCategorySelect');
+      const catVal = catSelect ? catSelect.value : 'all';
+      performSearch(e.target.value, catVal);
     });
   }
+
+  // Dropdown link listeners for Wholesale and Export
+  document.querySelectorAll('.wholesale-menu-dropdown a[data-category], .export-menu-dropdown a[data-category]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const catName = link.getAttribute('data-category');
+      const subName = link.getAttribute('data-sub');
+      if (catName) {
+        filterAndScroll(catName, subName);
+      }
+    });
+  });
 }
 
 // Sticky header styling on scroll
@@ -1213,26 +1188,37 @@ function renderProductCardHtml(product) {
     if (mrp <= sellingPrice) mrp = sellingPrice + 500;
   }
   const discountPct = (mrp > sellingPrice && mrp > 0) ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
+  const isCorporate = (product.categoryId === 'corporate-gifting' || (product.category && product.category.toLowerCase().includes('corporate')));
 
   return `
-    <article class="product-card" id="card-${product.id}">
+    <article class="product-card ${product.outOfStock ? 'is-out-of-stock' : ''}" id="card-${product.id}">
       <div class="product-img-box">
         <img src="${product.image}" alt="${escapeHtml(product.title || product.name)}" class="product-img" loading="lazy" onerror="this.src='images/wooden-gallery.jpg'">
         <span class="product-badge">${escapeHtml(product.badge || 'Artisan Creation')}</span>
+        ${product.outOfStock ? '<span class="product-badge product-out-of-stock-badge" style="background:#dc3545; color:#fff; font-weight:700;"><i class="fa-solid fa-ban"></i> OUT OF STOCK</span>' : ''}
         ${discountPct > 0 ? `<span class="product-discount-ribbon"><i class="fa-solid fa-arrow-down"></i>${discountPct}% OFF</span>` : ''}
         <div class="product-quick-actions">
           <button class="quick-action-btn" onclick="openQuickView('${product.id}')">
             <i class="fa-regular fa-eye"></i> QUICK VIEW
           </button>
-          <button class="quick-action-btn" onclick="addToCart('${product.id}')">
-            <i class="fa-solid fa-plus"></i> ADD TO BAG
-          </button>
+          ${isCorporate ? `
+            <button class="quick-action-btn" onclick="openProposalModalForProduct('${product.id}')">
+              <i class="fa-solid fa-file-signature"></i> ENQUIRE
+            </button>
+          ` : (product.outOfStock ? `
+            <button class="quick-action-btn btn-action-disabled" disabled style="opacity: 0.6; cursor: not-allowed;">
+              <i class="fa-solid fa-ban"></i> OUT OF STOCK
+            </button>
+          ` : `
+            <button class="quick-action-btn" onclick="addToCart('${product.id}')">
+              <i class="fa-solid fa-plus"></i> ADD TO BAG
+            </button>
+          `)}
         </div>
       </div>
       <div class="product-info">
         <span class="product-category-meta">${escapeHtml(product.category)}</span>
         <h4 class="product-title">${escapeHtml(product.title || product.name)}</h4>
-        ${product.subItem ? `<span class="product-sub-item-tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(product.subItem)}</span>` : ''}
         <div class="product-price-row">
           <div class="card-deal-pricing">
             <div class="card-deal-row">
@@ -1241,9 +1227,19 @@ function renderProductCardHtml(product) {
               <span class="card-selling-price">₹${sellingPrice.toLocaleString('en-IN')}</span>
             </div>
           </div>
-          <button class="add-cart-mini-btn" onclick="addToCart('${product.id}')" title="Add to bag">
-            <i class="fa-solid fa-bag-shopping"></i>
-          </button>
+          ${isCorporate ? `
+            <button class="btn-corporate-mini-enquire" onclick="openProposalModalForProduct('${product.id}')" title="Request Corporate Proposal">
+              <i class="fa-solid fa-paper-plane"></i> Enquire
+            </button>
+          ` : (product.outOfStock ? `
+            <button class="add-cart-mini-btn btn-stock-disabled" disabled title="Out of stock" style="opacity: 0.5; cursor: not-allowed; background: #e2e8f0; color: #a0aec0;">
+              <i class="fa-solid fa-ban"></i>
+            </button>
+          ` : `
+            <button class="add-cart-mini-btn" onclick="addToCart('${product.id}')" title="Add to bag">
+              <i class="fa-solid fa-bag-shopping"></i>
+            </button>
+          `)}
         </div>
       </div>
     </article>
@@ -1295,7 +1291,199 @@ function renderCategorySubBlocksHtml(cat, catProducts) {
 function renderProductCatalog() {
   const container = document.getElementById('productCatalogGrid');
   const countLabel = document.getElementById('productsCountText');
+  const banner = document.getElementById('catalogActiveFilterBanner');
   if (!container) return;
+
+  // 1. ACTIVE SEARCH QUERY FILTER
+  if (currentSearchQuery && currentSearchQuery.trim() !== '') {
+    const q = currentSearchQuery.toLowerCase().trim();
+    let filtered = PRODUCTS_DATA.filter(p => {
+      // If a specific category is also chosen
+      if (currentCategoryFilter !== 'all') {
+        const pCatId = p.categoryId || normalizeCategoryId(p.category);
+        if (pCatId !== currentCategoryFilter) return false;
+      }
+      return (
+        (p.title && p.title.toLowerCase().includes(q)) ||
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.category && p.category.toLowerCase().includes(q)) ||
+        (p.subItem && p.subItem.toLowerCase().includes(q)) ||
+        (p.subCategory && p.subCategory.toLowerCase().includes(q)) ||
+        (p.material && p.material.toLowerCase().includes(q)) ||
+        (p.craftOrigin && p.craftOrigin.toLowerCase().includes(q)) ||
+        (p.description && p.description.toLowerCase().includes(q))
+      );
+    });
+
+    if (banner) {
+      banner.style.display = 'flex';
+      banner.innerHTML = `
+        <div class="catalog-active-filter-banner">
+          <div class="filter-info">
+            <i class="fa-solid fa-magnifying-glass" style="color:var(--color-gold);"></i>
+            Search Results for <span class="filter-crumb">"${escapeHtml(currentSearchQuery)}"</span> &bull; <strong>${filtered.length}</strong> artisan creation${filtered.length === 1 ? '' : 's'} found
+          </div>
+          <button type="button" class="filter-clear-btn" onclick="clearSearchFilter()">
+            <i class="fa-solid fa-xmark"></i> Clear Search
+          </button>
+        </div>
+      `;
+    }
+
+    if (countLabel) {
+      countLabel.textContent = `Showing ${filtered.length} search result${filtered.length === 1 ? '' : 's'} for "${currentSearchQuery}"`;
+    }
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 50px 20px; text-align: center; color: var(--color-text-muted); background: #faf9f6; border-radius: 8px; border: 1px dashed var(--color-border); width: 100%;">
+          <i class="fa-solid fa-magnifying-glass" style="font-size: 2.2rem; color: var(--color-gold); margin-bottom: 14px; display: block;"></i>
+          <h4 style="font-family: var(--font-serif); font-size: 1.4rem; color: var(--color-primary); margin: 0 0 8px;">No creations found for "${escapeHtml(currentSearchQuery)}"</h4>
+          <p style="margin: 0 0 20px; font-size: 0.92rem;">Try searching for lamp, terracotta, wooden clock, brass urli, or switch collection.</p>
+          <button type="button" class="btn btn-primary btn-sm" onclick="clearSearchFilter()">View Complete Artisan Collection</button>
+        </div>
+      `;
+    } else {
+      container.innerHTML = `
+        <div class="product-cards-grid" style="width: 100%;">
+          ${filtered.map(renderProductCardHtml).join('')}
+        </div>
+      `;
+    }
+    return;
+  }
+
+  // 2. ACTIVE SUBCATEGORY FILTER
+  if (currentSubCategoryFilter && currentCategoryFilter !== 'all') {
+    const targetCat = getCategoryById(currentCategoryFilter);
+    const subQ = currentSubCategoryFilter.toLowerCase().trim();
+
+    const filtered = PRODUCTS_DATA.filter(p => {
+      const pCatId = p.categoryId || normalizeCategoryId(p.category);
+      const catMatch = (pCatId === targetCat.id || (p.category && p.category.toLowerCase() === targetCat.name.toLowerCase()));
+      if (!catMatch) return false;
+
+      const pSub = (p.subCategory || p.subItem || '').toLowerCase();
+      const pTitle = (p.title || '').toLowerCase();
+      return pSub.includes(subQ) || subQ.includes(pSub) || pTitle.includes(subQ);
+    });
+
+    if (banner) {
+      banner.style.display = 'flex';
+      banner.innerHTML = `
+        <div class="catalog-active-filter-banner">
+          <div class="filter-info">
+            <i class="fa-solid fa-layer-group" style="color:var(--color-gold);"></i>
+            Collection: <span class="filter-crumb">${escapeHtml(targetCat.name)} &rsaquo; ${escapeHtml(currentSubCategoryFilter)}</span> &bull; <strong>${filtered.length}</strong> creation${filtered.length === 1 ? '' : 's'}
+          </div>
+          <button type="button" class="filter-clear-btn" onclick="filterAndScroll('${escapeHtml(targetCat.name)}')">
+            <i class="fa-solid fa-xmark"></i> Show All in ${escapeHtml(targetCat.name)}
+          </button>
+        </div>
+      `;
+    }
+
+    if (countLabel) {
+      countLabel.textContent = `Showing ${filtered.length} artisan creation${filtered.length === 1 ? '' : 's'} in ${targetCat.name} › ${currentSubCategoryFilter}`;
+    }
+
+    container.innerHTML = `
+      <div class="public-category-block" id="pub-cat-${targetCat.id}" style="width: 100%;">
+        <div class="public-cat-header">
+          <div class="public-cat-title-wrap">
+            <span class="public-cat-eyebrow">${escapeHtml(targetCat.badge || 'Collection')}</span>
+            <h3 class="public-cat-title">${escapeHtml(targetCat.name.toUpperCase())} &mdash; ${escapeHtml(currentSubCategoryFilter.toUpperCase())}</h3>
+          </div>
+          <span class="public-cat-count">${filtered.length} Artisan Creation${filtered.length === 1 ? '' : 's'}</span>
+        </div>
+        ${filtered.length === 0 ? `
+          <div style="padding: 40px; text-align: center; color: var(--color-text-muted); background: #faf9f6; border-radius: 8px; border: 1px dashed var(--color-border);">
+            <p style="margin: 0 0 16px; font-size: 1rem;"><i class="fa-solid fa-sparkles" style="color:var(--color-gold); margin-right: 6px;"></i>No items specifically listed under "${escapeHtml(currentSubCategoryFilter)}" right now.</p>
+            <button type="button" class="btn btn-outline btn-sm" onclick="filterAndScroll('${escapeHtml(targetCat.name)}')">View All ${escapeHtml(targetCat.name)}</button>
+          </div>
+        ` : `
+          <div class="product-cards-grid">
+            ${filtered.map(renderProductCardHtml).join('')}
+          </div>
+        `}
+      </div>
+    `;
+    return;
+  }
+
+  // 3. CHANNEL LEVEL FILTER (Wholesale or Export)
+  if (currentCategoryFilter && String(currentCategoryFilter).startsWith('channel:')) {
+    const ch = currentCategoryFilter.split(':')[1].toLowerCase();
+    const isWholesale = ch === 'wholesale';
+    const isExport = ch === 'export';
+    const channelTitle = isWholesale ? 'Wholesale B2B Catalog' : (isExport ? 'Export & Global Consignments' : `${ch.toUpperCase()} Collections`);
+    const channelBadge = isWholesale ? 'Wholesale B2B' : (isExport ? 'Export Global' : 'Department');
+
+    const channelCats = PRODUCT_CATEGORIES.filter(c => (c.channel || '').toLowerCase() === ch);
+    const channelCatIds = new Set(channelCats.map(c => c.id));
+
+    const filtered = PRODUCTS_DATA.filter(p => {
+      const pCatId = p.categoryId || normalizeCategoryId(p.category);
+      return channelCatIds.has(pCatId) || (p.category && p.category.toLowerCase().includes(ch));
+    });
+
+    if (banner) {
+      banner.style.display = 'flex';
+      banner.innerHTML = `
+        <div class="catalog-active-filter-banner">
+          <div class="filter-info">
+            <i class="fa-solid ${isWholesale ? 'fa-boxes-stacked' : (isExport ? 'fa-earth-americas' : 'fa-layer-group')}" style="color:var(--color-gold);"></i>
+            Department: <span class="filter-crumb">${escapeHtml(channelTitle)}</span> &bull; <strong>${filtered.length}</strong> artisan creation${filtered.length === 1 ? '' : 's'}
+          </div>
+          <button type="button" class="filter-clear-btn" onclick="filterAndScroll('all')">
+            <i class="fa-solid fa-xmark"></i> View All Collections
+          </button>
+        </div>
+      `;
+    }
+
+    if (countLabel) {
+      countLabel.textContent = `Showing ${filtered.length} artisan creation${filtered.length === 1 ? '' : 's'} in ${channelTitle}`;
+    }
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 50px 20px; text-align: center; color: var(--color-text-muted); background: #faf9f6; border-radius: 8px; border: 1px dashed var(--color-border); width: 100%;">
+          <i class="fa-solid ${isWholesale ? 'fa-boxes-stacked' : 'fa-earth-americas'}" style="font-size: 2.2rem; color: var(--color-gold); margin-bottom: 14px; display: block;"></i>
+          <h4 style="font-family: var(--font-serif); font-size: 1.4rem; color: var(--color-primary); margin: 0 0 8px;">No creations found in ${escapeHtml(channelTitle)}</h4>
+          <p style="margin: 0 0 20px; font-size: 0.92rem;">Explore our other collections or submit a bespoke enquiry.</p>
+          <button type="button" class="btn btn-primary btn-sm" onclick="filterAndScroll('all')">View All Collections</button>
+        </div>
+      `;
+    } else {
+      container.innerHTML = channelCats.map(cat => {
+        const catProds = filtered.filter(p => {
+          const pCatId = p.categoryId || normalizeCategoryId(p.category);
+          return pCatId === cat.id || (p.category && p.category.toLowerCase() === cat.name.toLowerCase());
+        });
+        if (catProds.length === 0) return '';
+        return `
+          <div class="public-category-block" id="pub-cat-${cat.id}">
+            <div class="public-cat-header">
+              <div class="public-cat-title-wrap">
+                <span class="public-cat-eyebrow">${escapeHtml(cat.badge || channelBadge)}</span>
+                <h3 class="public-cat-title">${escapeHtml(cat.name.toUpperCase())}</h3>
+              </div>
+              <span class="public-cat-count">${catProds.length} Artisan Creation${catProds.length === 1 ? '' : 's'}</span>
+            </div>
+            ${renderCategorySubBlocksHtml(cat, catProds)}
+          </div>
+        `;
+      }).join('');
+    }
+    return;
+  }
+
+  // 4. STANDARD CATEGORY / ALL VIEW
+  if (banner) {
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+  }
 
   if (currentCategoryFilter === 'all') {
     // Collect all active categories in taxonomy order
@@ -1316,7 +1504,6 @@ function renderProductCatalog() {
     }
 
     container.innerHTML = categoriesToRender.map(cat => {
-      // Products belonging exclusively to this category
       const catProducts = PRODUCTS_DATA.filter(p => {
         const pCatId = p.categoryId || normalizeCategoryId(p.category);
         return pCatId === cat.id;
@@ -1347,6 +1534,21 @@ function renderProductCatalog() {
       return pCatId === targetCat.id || (p.category && p.category.toLowerCase() === targetCat.name.toLowerCase());
     });
 
+    if (banner) {
+      banner.style.display = 'flex';
+      banner.innerHTML = `
+        <div class="catalog-active-filter-banner">
+          <div class="filter-info">
+            <i class="fa-solid fa-layer-group" style="color:var(--color-gold);"></i>
+            Collection: <span class="filter-crumb">${escapeHtml(targetCat.name)}</span> &bull; <strong>${filtered.length}</strong> artisan creation${filtered.length === 1 ? '' : 's'}
+          </div>
+          <button type="button" class="filter-clear-btn" onclick="filterAndScroll('all')">
+            <i class="fa-solid fa-xmark"></i> View All Collections
+          </button>
+        </div>
+      `;
+    }
+
     if (countLabel) {
       countLabel.textContent = `Showing ${filtered.length} artisan creation${filtered.length === 1 ? '' : 's'} in ${targetCat.name}`;
     }
@@ -1363,7 +1565,7 @@ function renderProductCatalog() {
         ${filtered.length === 0 ? `
           <div style="padding: 40px; text-align: center; color: var(--color-text-muted); background: #faf9f6; border-radius: 8px; border: 1px dashed var(--color-border);">
             <p style="margin: 0 0 16px; font-size: 1rem;"><i class="fa-solid fa-sparkles" style="color:var(--color-gold); margin-right: 6px;"></i>No creations currently listed in ${escapeHtml(targetCat.name)}.</p>
-            <button class="btn btn-outline btn-sm" onclick="filterAndScroll('all')">View All Collections</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="filterAndScroll('all')">View All Collections</button>
           </div>
         ` : renderCategorySubBlocksHtml(targetCat, filtered)}
       </div>
@@ -1372,44 +1574,100 @@ function renderProductCatalog() {
 }
 
 // Filter and scroll smoothly to catalog
-window.filterAndScroll = function(categoryName, subCategory) {
-  const normId = normalizeCategoryId(categoryName);
-  const targetCat = getCategoryById(normId);
+window.filterAndScroll = function (categoryName, subCategory) {
+  currentSearchQuery = '';
+  const searchInput = document.getElementById('catalogSearchInput');
+  if (searchInput) searchInput.value = '';
+
+  if (categoryName && String(categoryName).startsWith('channel:')) {
+    filterByChannel(categoryName.replace('channel:', ''));
+    return;
+  }
+
+  if (categoryName === 'all') {
+    currentCategoryFilter = 'all';
+    currentSubCategoryFilter = null;
+  } else {
+    const normId = normalizeCategoryId(categoryName);
+    currentCategoryFilter = normId;
+    currentSubCategoryFilter = subCategory && typeof subCategory === 'string' && subCategory.trim() ? subCategory.trim() : null;
+  }
+
+  const targetCat = getCategoryById(currentCategoryFilter);
 
   const tabBtns = document.querySelectorAll('.category-tabs .tab-btn');
   tabBtns.forEach(btn => {
     const btnFilter = btn.getAttribute('data-filter');
-    if (categoryName === 'all' && btnFilter === 'all') {
+    if (currentCategoryFilter === 'all' && btnFilter === 'all' && !currentSubCategoryFilter) {
       btn.classList.add('active');
-    } else if (btnFilter === categoryName || btnFilter === targetCat.name || (btnFilter !== 'all' && normalizeCategoryId(btnFilter) === normId)) {
+    } else if (!currentSubCategoryFilter && (btnFilter === categoryName || btnFilter === targetCat.name || (btnFilter !== 'all' && normalizeCategoryId(btnFilter) === currentCategoryFilter))) {
       btn.classList.add('active');
     } else {
       btn.classList.remove('active');
     }
   });
 
-  currentCategoryFilter = (categoryName === 'all') ? 'all' : normId;
   renderProductCatalog();
 
   const catalogElem = document.getElementById('categories');
   if (catalogElem) {
     catalogElem.scrollIntoView({ behavior: 'smooth' });
   }
+};
 
-  if (subCategory) {
-    setTimeout(() => {
-      const headers = document.querySelectorAll('.public-subcat-title');
-      for (const h of headers) {
-        if (h.textContent.toLowerCase().includes(subCategory.toLowerCase())) {
-          h.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          break;
-        }
-      }
-    }, 450);
+// Filter by department/channel (wholesale, export, or shop)
+window.filterByChannel = function (channelName) {
+  currentSearchQuery = '';
+  const searchInput = document.getElementById('catalogSearchInput');
+  if (searchInput) searchInput.value = '';
+
+  const ch = String(channelName || '').toLowerCase().trim();
+  if (ch === 'shop' || ch === 'all') {
+    filterAndScroll('all');
+    return;
+  }
+
+  currentCategoryFilter = 'channel:' + ch;
+  currentSubCategoryFilter = null;
+
+  renderProductCatalog();
+
+  const catalogElem = document.getElementById('categories');
+  if (catalogElem) {
+    catalogElem.scrollIntoView({ behavior: 'smooth' });
   }
 };
 
-window.toggleAllProducts = function() {
+window.executeCatalogSearch = function () {
+  const input = document.getElementById('catalogSearchInput');
+  if (!input) return;
+  const q = input.value.trim();
+  if (!q) {
+    clearSearchFilter();
+    return;
+  }
+  currentSearchQuery = q;
+  currentSubCategoryFilter = null;
+  renderProductCatalog();
+  const catalogElem = document.getElementById('categories');
+  if (catalogElem) {
+    catalogElem.scrollIntoView({ behavior: 'smooth' });
+  }
+};
+
+window.clearSearchFilter = function () {
+  currentSearchQuery = '';
+  const input = document.getElementById('catalogSearchInput');
+  if (input) input.value = '';
+  const banner = document.getElementById('catalogActiveFilterBanner');
+  if (banner) {
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+  }
+  renderProductCatalog();
+};
+
+window.toggleAllProducts = function () {
   filterAndScroll('all');
 };
 
@@ -1417,7 +1675,7 @@ window.toggleAllProducts = function() {
 // 4. SHOPPING CART SYSTEM
 // =============================================================================
 
-window.addToCart = function(productId, quantity = 1) {
+window.addToCart = function (productId, quantity = 1) {
   const product = PRODUCTS_DATA.find(p => p.id === productId);
   if (!product) return;
 
@@ -1443,13 +1701,13 @@ window.addToCart = function(productId, quantity = 1) {
   openCart();
 };
 
-window.removeFromCart = function(productId) {
+window.removeFromCart = function (productId) {
   cartState = cartState.filter(item => item.id !== productId);
   saveCart();
   updateCartUI();
 };
 
-window.updateItemQuantity = function(productId, delta) {
+window.updateItemQuantity = function (productId, delta) {
   const item = cartState.find(i => i.id === productId);
   if (!item) return;
 
@@ -1541,24 +1799,24 @@ function updateCartUI() {
   `).join('');
 }
 
-window.openCart = function() {
+window.openCart = function () {
   document.getElementById('cartDrawer').classList.add('active');
   document.getElementById('cartOverlay').classList.add('active');
 };
 
-window.closeCart = function() {
+window.closeCart = function () {
   document.getElementById('cartDrawer').classList.remove('active');
   document.getElementById('cartOverlay').classList.remove('active');
 };
 
-window.simulateCheckout = function() {
+window.simulateCheckout = function () {
   if (cartState.length === 0) {
     alert('Your shopping bag is empty.');
     return;
   }
   const subtotal = cartState.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const totalQty = cartState.reduce((sum, item) => sum + item.quantity, 0);
-  
+
   const orderRecord = {
     id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
     items: [...cartState],
@@ -1590,7 +1848,7 @@ function updateWishlistBadge() {
 // 5. QUICK VIEW MODAL
 // =============================================================================
 
-window.openQuickView = function(productId) {
+window.openQuickView = function (productId) {
   const product = PRODUCTS_DATA.find(p => p.id === productId);
   if (!product) return;
 
@@ -1648,7 +1906,7 @@ window.openQuickView = function(productId) {
   document.getElementById('quickViewModal').classList.add('active');
 };
 
-window.closeQuickView = function() {
+window.closeQuickView = function () {
   document.getElementById('quickViewModal').classList.remove('active');
 };
 
@@ -1656,7 +1914,7 @@ window.closeQuickView = function() {
 // 6. PROPOSAL & B2B MODAL
 // =============================================================================
 
-window.openProposalModal = function(inquiryTitle = 'General Inquiry') {
+window.openProposalModal = function (inquiryTitle = 'General Inquiry') {
   const modal = document.getElementById('proposalModal');
   const typeSelect = document.getElementById('partnershipType');
   const modalTitle = document.getElementById('proposalModalTitle');
@@ -1711,19 +1969,409 @@ window.openProposalModal = function(inquiryTitle = 'General Inquiry') {
   modal.classList.add('active');
 };
 
-window.closeProposalModal = function() {
+window.closeProposalModal = function () {
   document.getElementById('proposalModal').classList.remove('active');
 };
 
-window.handleProposalSubmit = function(event) {
+// Open Proposal Modal Pre-filled for a specific product
+window.openProposalModalForProduct = function (productId) {
+  const prod = PRODUCTS_DATA.find(p => p.id === productId);
+  if (!prod) {
+    openProposalModal('Corporate Gifting');
+    return;
+  }
+
+  const modal = document.getElementById('proposalModal');
+  const typeSelect = document.getElementById('partnershipType');
+  const modalTitle = document.getElementById('proposalModalTitle');
+  const notesField = document.getElementById('projectNotes');
+
+  if (modalTitle) {
+    modalTitle.innerHTML = `<i class="fa-solid fa-gift" style="color:var(--color-gold); margin-right:8px;"></i> Request Proposal — ${escapeHtml(prod.title || prod.name)}`;
+  }
+
+  if (typeSelect) {
+    const sub = (prod.subItem || '').toLowerCase();
+    if (sub.includes('welcome') || sub.includes('onboard')) {
+      typeSelect.value = 'Employee Appreciation Gift Kit';
+    } else if (sub.includes('recogni') || sub.includes('milestone')) {
+      typeSelect.value = 'Employee Appreciation Gift Kit';
+    } else if (sub.includes('festive') || sub.includes('celebration')) {
+      typeSelect.value = 'Festive Gifting';
+    } else if (sub.includes('client') || sub.includes('executive')) {
+      typeSelect.value = 'Executive Gifting';
+    } else if (sub.includes('esg') || sub.includes('sustain')) {
+      typeSelect.value = 'ESG & Impact Gifting';
+    } else if (sub.includes('custom') || sub.includes('set')) {
+      typeSelect.value = 'Custom Gift Kits';
+    } else {
+      typeSelect.value = 'Employee Appreciation Gift Kit';
+    }
+  }
+
+  if (notesField) {
+    const mrpStr = prod.mrp ? `MRP: ₹${Number(prod.mrp).toLocaleString('en-IN')}` : '';
+    const priceStr = prod.price ? `Offer Price: ₹${Number(prod.price).toLocaleString('en-IN')}` : '';
+    const stockNote = prod.outOfStock ? ' [Note: Currently marked Out of Stock - requesting next production batch quote]' : '';
+    notesField.value = `Product Inquiry: ${prod.title || prod.name} (${prod.subItem || 'Corporate Gifting'})\n${priceStr} ${mrpStr}${stockNote}\nPlease share minimum order quantities, customization timeline, and enterprise bulk pricing.`;
+  }
+
+  if (modal) modal.classList.add('active');
+};
+
+// =============================================================================
+// HERO SECTION (Dynamic Background, Eyebrow, Headings, Subtitle & Buttons)
+// =============================================================================
+
+const DEFAULT_HERO_DATA = {
+  eyebrow: "ARTISANAL EXCELLENCE • DIRECT FROM INDIA",
+  title: "CRAFTED BY ARTISANS.\nINSPIRED BY INDIA.\nMADE MEANINGFUL.",
+  description: "Discover thoughtfully crafted home décor and meaningful gifts that celebrate Indian craftsmanship, empower artisans and inspire more sustainable living.",
+  image: "images/hero.jpg",
+  defaultImage: "images/hero.jpg",
+  primaryBtnText: "SHOP COLLECTIONS",
+  primaryBtnLink: "#categories",
+  secondaryBtnText: "REQUEST A PROPOSAL",
+  secondaryBtnLink: "modal:proposal"
+};
+
+let HERO_DATA = (function () {
+  try {
+    const cached = localStorage.getItem('verdanta_hero_data');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && typeof parsed === 'object') return { ...DEFAULT_HERO_DATA, ...parsed };
+    }
+  } catch (e) {}
+  return { ...DEFAULT_HERO_DATA };
+})();
+
+window.renderHeroSection = function (customData) {
+  const hero = customData || HERO_DATA || DEFAULT_HERO_DATA;
+
+  const backdrop = document.getElementById('heroBackdrop');
+  if (backdrop) {
+    const bgUrl = hero.image || hero.defaultImage || 'images/hero.jpg';
+    backdrop.style.backgroundImage = `url("${escapeAttr(bgUrl)}")`;
+  }
+
+  const eyebrow = document.getElementById('heroEyebrow');
+  if (eyebrow) {
+    eyebrow.textContent = hero.eyebrow || DEFAULT_HERO_DATA.eyebrow;
+  }
+
+  const title = document.getElementById('heroTitle');
+  if (title) {
+    const rawTitle = hero.title || DEFAULT_HERO_DATA.title;
+    title.innerHTML = escapeHtml(rawTitle).replace(/\n/g, '<br>');
+  }
+
+  const subtitle = document.getElementById('heroSubtitle');
+  if (subtitle) {
+    subtitle.textContent = hero.description || DEFAULT_HERO_DATA.description;
+  }
+
+  const primaryBtn = document.getElementById('heroShopBtn');
+  if (primaryBtn) {
+    const pText = hero.primaryBtnText !== undefined ? hero.primaryBtnText : DEFAULT_HERO_DATA.primaryBtnText;
+    const pLink = hero.primaryBtnLink !== undefined ? hero.primaryBtnLink : DEFAULT_HERO_DATA.primaryBtnLink;
+    if (pText && pText.trim()) {
+      primaryBtn.textContent = pText;
+      primaryBtn.href = pLink || '#categories';
+      primaryBtn.style.display = 'inline-flex';
+    } else {
+      primaryBtn.style.display = 'none';
+    }
+  }
+
+  const secondaryBtn = document.getElementById('heroProposalBtn');
+  if (secondaryBtn) {
+    const sText = hero.secondaryBtnText !== undefined ? hero.secondaryBtnText : DEFAULT_HERO_DATA.secondaryBtnText;
+    if (sText && sText.trim()) {
+      secondaryBtn.textContent = sText;
+      secondaryBtn.style.display = 'inline-flex';
+    } else {
+      secondaryBtn.style.display = 'none';
+    }
+  }
+};
+
+window.handleHeroSecondaryClick = function (e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const hero = HERO_DATA || DEFAULT_HERO_DATA;
+  const link = (hero.secondaryBtnLink || 'modal:proposal').trim();
+
+  if (link.startsWith('modal:') || link === 'proposal') {
+    if (typeof openProposalModal === 'function') {
+      openProposalModal('General Inquiry');
+    }
+  } else if (link.startsWith('#')) {
+    const target = document.querySelector(link);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  } else if (link) {
+    window.location.href = link;
+  }
+};
+
+window.fetchHeroData = async function () {
+  try {
+    const res = await fetch(getApiUrl('/api/hero'));
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data === 'object') {
+        HERO_DATA = { ...DEFAULT_HERO_DATA, ...data };
+        try {
+          localStorage.setItem('verdanta_hero_data', JSON.stringify(HERO_DATA));
+        } catch (e) {}
+        renderHeroSection(HERO_DATA);
+      }
+    }
+  } catch (err) {
+    console.warn('Could not fetch hero data from server, using local/defaults:', err);
+  }
+};
+
+// Immediate render on script load
+try {
+  renderHeroSection(HERO_DATA);
+  fetchHeroData();
+} catch (e) {}
+
+// =============================================================================
+// CORPORATE GIFTING (Exact 6 Category Cards Matching Reference Image)
+// =============================================================================
+
+const DEFAULT_CORPORATE_CARDS = [
+  {
+    id: "corp-welcome",
+    order: 1,
+    title: "EMPLOYEE WELCOME & ONBOARDING",
+    description: "Thoughtful gift sets to make new team members feel valued and connected.",
+    icon: "fa-solid fa-leaf",
+    image: "images/corporate/corp-welcome.jpg",
+    defaultImage: "images/corporate/corp-welcome.jpg",
+    categoryKey: "Employee Welcome & Onboarding"
+  },
+  {
+    id: "corp-recognition",
+    order: 2,
+    title: "EMPLOYEE RECOGNITION & MILESTONES",
+    description: "Celebrate achievements with premium gifts that inspire and motivate.",
+    icon: "fa-solid fa-user",
+    image: "images/corporate/corp-recognition.jpg",
+    defaultImage: "images/corporate/corp-recognition.jpg",
+    categoryKey: "Employee Recognition & Milestones"
+  },
+  {
+    id: "corp-festive",
+    order: 3,
+    title: "FESTIVE & CELEBRATION GIFTING",
+    description: "Spread joy with curated gifts for festivals, celebrations and special occasions.",
+    icon: "fa-solid fa-gift",
+    image: "images/corporate/corp-festive.jpg",
+    defaultImage: "images/corporate/corp-festive.jpg",
+    categoryKey: "Festive & Celebration Gifting"
+  },
+  {
+    id: "corp-client",
+    order: 4,
+    title: "CLIENT, PARTNER & EXECUTIVE GIFTING",
+    description: "Build lasting relationships with premium, customized and eco-friendly gift options.",
+    icon: "fa-solid fa-leaf",
+    image: "images/corporate/corp-client.jpg",
+    defaultImage: "images/corporate/corp-client.jpg",
+    categoryKey: "Client, Partner & Executive Gifting"
+  },
+  {
+    id: "corp-esg",
+    order: 5,
+    title: "SUSTAINABLE & ESG GIFTING",
+    description: "Eco-conscious gifts for a greener planet and a better tomorrow.",
+    icon: "fa-solid fa-leaf",
+    image: "images/corporate/corp-esg.jpg",
+    defaultImage: "images/corporate/corp-esg.jpg",
+    categoryKey: "Sustainable & ESG Gifting"
+  },
+  {
+    id: "corp-curated",
+    order: 6,
+    title: "CURATED & CUSTOM CORPORATE GIFT SETS",
+    description: "Tailored gift sets to reflect your brand and unique message.",
+    icon: "fa-regular fa-star",
+    image: "images/corporate/corp-curated.jpg",
+    defaultImage: "images/corporate/corp-curated.jpg",
+    categoryKey: "Curated & Custom Corporate Gift Sets"
+  }
+];
+
+let CORPORATE_CARDS = (function () {
+  try {
+    const cached = localStorage.getItem('verdanta_corporate_cards');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return [...DEFAULT_CORPORATE_CARDS];
+})();
+let lastSyncedCorpCardsJson = '';
+
+window.fetchCorporateCards = async function () {
+  try {
+    const res = await fetch(getApiUrl('/api/corporate-cards'));
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        CORPORATE_CARDS = data;
+        lastSyncedCorpCardsJson = JSON.stringify(data);
+        try {
+          localStorage.setItem('verdanta_corporate_cards', lastSyncedCorpCardsJson);
+        } catch (e) {}
+      }
+    }
+  } catch (err) {
+    console.warn('Could not fetch corporate cards from server:', err);
+    try {
+      const cached = localStorage.getItem('verdanta_corporate_cards');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          CORPORATE_CARDS = parsed;
+        }
+      }
+    } catch (e) {}
+  }
+  renderCorporateCards();
+};
+
+window.renderCorporateCards = function () {
+  const container = document.getElementById('corporateCardsGrid') || document.getElementById('corporateProductsGrid');
+  if (!container) return;
+
+  container.className = 'corporate-reference-grid';
+  container.innerHTML = CORPORATE_CARDS.map(card => {
+    const imgSrc = card.image || card.defaultImage || 'images/corporate-lifestyle.jpg';
+    return `
+      <div class="corp-card-ref" id="card-${escapeAttr(card.id)}">
+        <div class="corp-card-img-wrap">
+          <img src="${escapeAttr(imgSrc)}" alt="${escapeAttr(card.title)}" loading="lazy" onerror="this.onerror=null; this.src='${escapeAttr(card.defaultImage || 'images/corporate-lifestyle.jpg')}';">
+        </div>
+        <div class="corp-card-body-ref">
+          <div class="corp-card-head-row">
+            <div class="corp-card-icon-pill">
+              <i class="${escapeAttr(card.icon || 'fa-solid fa-leaf')}"></i>
+            </div>
+            <h3 class="corp-card-title-ref">${escapeHtml(card.title)}</h3>
+          </div>
+          <p class="corp-card-desc-ref">${escapeHtml(card.description)}</p>
+          <button type="button" class="corp-card-btn-ref" onclick="openCorporateCardEnquiry(event, '${escapeAttr(card.id)}')">
+            <i class="fa-solid fa-paper-plane"></i> Enquire Now
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+// Aliases for compatibility
+window.renderCorporateProducts = function () {
+  renderCorporateCards();
+};
+
+// Run immediate render & background fetch
+try {
+  renderCorporateCards();
+  fetchCorporateCards();
+} catch (e) {}
+
+window.filterCorporateSubCategory = function (subCategoryName = 'all') {
+  openCorporateGifting(null, subCategoryName);
+};
+
+window.openCorporateGifting = function (event, targetSubCategory = 'all') {
+  if (event && event.preventDefault) event.preventDefault();
+
+  const section = document.getElementById('corporate');
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  if (targetSubCategory && targetSubCategory !== 'all') {
+    const targetLower = targetSubCategory.toLowerCase().trim();
+    const card = CORPORATE_CARDS.find(c => 
+      c.id === targetSubCategory || 
+      (c.categoryKey && c.categoryKey.toLowerCase() === targetLower) ||
+      (c.title && c.title.toLowerCase() === targetLower)
+    );
+    if (card) {
+      setTimeout(() => {
+        const el = document.getElementById('card-' + card.id);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('highlight-active');
+          setTimeout(() => el.classList.remove('highlight-active'), 2000);
+        }
+      }, 350);
+    }
+  }
+};
+
+window.openCorporateCardEnquiry = function (event, cardId) {
+  if (event && event.preventDefault) event.preventDefault();
+  const card = CORPORATE_CARDS.find(c => c.id === cardId) || {
+    id: cardId,
+    title: 'Corporate Gifting',
+    categoryKey: 'Corporate Gifting'
+  };
+
+  const modal = document.getElementById('proposalModal');
+  const typeSelect = document.getElementById('partnershipType');
+  const modalTitle = document.getElementById('proposalModalTitle');
+  const notesField = document.getElementById('projectNotes');
+
+  if (modalTitle) {
+    modalTitle.innerHTML = `<i class="fa-solid fa-gift" style="color:var(--color-gold); margin-right:8px;"></i> Request Proposal — ${escapeHtml(card.title)}`;
+  }
+
+  if (typeSelect) {
+    const targetVal = card.categoryKey || card.title;
+    let found = false;
+    for (let opt of typeSelect.options) {
+      if (opt.value.toLowerCase() === targetVal.toLowerCase() || opt.text.toLowerCase().includes(targetVal.toLowerCase())) {
+        typeSelect.value = opt.value;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      const opt = document.createElement('option');
+      opt.value = targetVal;
+      opt.textContent = `Corporate Gifting - ${targetVal}`;
+      opt.selected = true;
+      typeSelect.prepend(opt);
+    }
+  }
+
+  if (notesField) {
+    notesField.value = `Inquiry for ${card.title}. Please provide product options, logo branding customization, volume pricing tiers, and delivery timelines.`;
+  }
+
+  if (modal) modal.classList.add('active');
+  const nameInput = document.getElementById('contactName');
+  if (nameInput) setTimeout(() => nameInput.focus(), 150);
+};
+
+window.handleProposalSubmit = async function (event) {
   event.preventDefault();
-  const name = document.getElementById('contactName').value;
-  const company = document.getElementById('companyName').value;
-  const email = document.getElementById('workEmail').value;
-  const phone = document.getElementById('phoneNumber').value;
-  const type = document.getElementById('partnershipType').value;
-  const units = document.getElementById('estimatedUnits').value || 'Not specified';
-  const notes = document.getElementById('projectNotes').value || 'No additional notes';
+  const name = (document.getElementById('contactName').value || '').trim() || 'Valued Client';
+  const company = (document.getElementById('companyName').value || '').trim() || 'Direct Inquiry';
+  const email = (document.getElementById('workEmail').value || '').trim() || 'Not specified';
+  const phone = (document.getElementById('phoneNumber').value || '').trim() || 'Not specified';
+  const type = (document.getElementById('partnershipType') && document.getElementById('partnershipType').value) || 'Corporate Gifting';
+  const units = (document.getElementById('estimatedUnits').value || '').trim() || 'Not specified';
+  const notes = (document.getElementById('projectNotes').value || '').trim() || 'No additional notes';
 
   const newProposal = {
     id: 'PRP-' + Date.now().toString().slice(-6),
@@ -1738,29 +2386,156 @@ window.handleProposalSubmit = function(event) {
     createdAt: new Date().toISOString()
   };
 
-  const proposals = JSON.parse(localStorage.getItem('verdanta_proposals')) || [];
-  proposals.unshift(newProposal);
-  localStorage.setItem('verdanta_proposals', JSON.stringify(proposals));
+  // 1. Immediate local storage persistence fallback
+  try {
+    const proposals = JSON.parse(localStorage.getItem('verdanta_proposals')) || [];
+    proposals.unshift(newProposal);
+    localStorage.setItem('verdanta_proposals', JSON.stringify(proposals));
+    localStorage.setItem('verdanta_sync_trigger', String(Date.now()));
+  } catch (e) {
+    console.warn('LocalStorage error:', e);
+  }
 
-  alert(`Thank you, ${name}! Your proposal request for "${company}" (${type}) has been logged successfully (ID: ${newProposal.id}). Our B2B partnership director will respond within 24 hours.`);
-  
-  document.getElementById('proposalForm').reset();
+  // 2. Persistent Database Storage via Backend API (/api/proposals)
+  try {
+    fetch(getApiUrl('/api/proposals'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newProposal)
+    }).then(res => res.json())
+      .then(data => {
+        console.log('[Database] Customer enquiry saved successfully:', data);
+        if (storeBroadcastChannel) {
+          storeBroadcastChannel.postMessage({ type: 'NEW_PROPOSAL', proposal: newProposal, timestamp: Date.now() });
+        }
+      })
+      .catch(err => {
+        console.warn('Server database proposal save warning:', err);
+      });
+  } catch (err) {
+    console.warn('Network error saving proposal:', err);
+  }
+
+  // 3. Format WhatsApp Notification Message & Send to Configured WhatsApp Number
+  const waTarget = VERDANTA_WHATSAPP_NUMBER || '918867688699';
+  const waLines = [
+    '🌿 *NEW CUSTOMER ENQUIRY — VERDANTA WORLD* 🌿',
+    '━━━━━━━━━━━━━━━━━━━━━━━━━',
+    `📋 *Inquiry ID:* ${newProposal.id}`,
+    `👤 *Client Name:* ${name}`,
+    `🏢 *Organization:* ${company}`,
+    `📞 *Phone:* ${phone}`,
+    `✉️ *Email:* ${email}`,
+    `🏷️ *Inquiry Type:* ${type}`,
+    `📦 *Volume / Budget:* ${units}`,
+    `📝 *Customization Details:*\n${notes}`,
+    `📅 *Submitted:* ${new Date().toLocaleString('en-IN')}`,
+    '━━━━━━━━━━━━━━━━━━━━━━━━━',
+    '_Sent via Verdanta World Online Portal_'
+  ];
+  const waMessage = waLines.join('\n');
+  const waUrl = `https://wa.me/${waTarget}?text=${encodeURIComponent(waMessage)}`;
+
+  // Automatically launch WhatsApp with the formatted inquiry message
+  try {
+    window.open(waUrl, '_blank');
+  } catch (e) {
+    window.location.href = waUrl;
+  }
+
+  // 4. Confirmation Feedback
+  alert(`Thank you, ${name}!\n\nYour proposal enquiry for "${company}" (${type}) has been logged in our database (ID: ${newProposal.id}).\n\nYour enquiry has also been forwarded to our WhatsApp (${waTarget}) for immediate priority review.`);
+
+  const form = document.getElementById('proposalForm');
+  if (form) form.reset();
   closeProposalModal();
+};
+
+window.handleVisitSubmit = async function (event) {
+  event.preventDefault();
+  const name = (document.getElementById('visitName').value || '').trim() || 'Guest';
+  const phone = (document.getElementById('visitPhone').value || '').trim() || 'Not specified';
+  const location = (document.getElementById('visitLocation') && document.getElementById('visitLocation').value) || 'Jaipur Atelier & Craft Studio';
+  const date = (document.getElementById('visitDate') && document.getElementById('visitDate').value) || 'Flexible';
+
+  const newVisitEnquiry = {
+    id: 'PRP-VST-' + Date.now().toString().slice(-5),
+    name: name,
+    company: `Private Showroom Visit (${location})`,
+    email: 'In-Person Appointment',
+    phone: phone,
+    type: 'Showroom Studio Visit',
+    units: `Date: ${date} at ${location}`,
+    notes: `Private atelier appointment requested for ${date} at ${location}. Client contact: ${phone}.`,
+    status: 'New',
+    createdAt: new Date().toISOString()
+  };
+
+  // 1. Local persistence
+  try {
+    const proposals = JSON.parse(localStorage.getItem('verdanta_proposals')) || [];
+    proposals.unshift(newVisitEnquiry);
+    localStorage.setItem('verdanta_proposals', JSON.stringify(proposals));
+    localStorage.setItem('verdanta_sync_trigger', String(Date.now()));
+  } catch (e) { }
+
+  // 2. Database persistence via Backend API (/api/proposals)
+  try {
+    fetch(getApiUrl('/api/proposals'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newVisitEnquiry)
+    }).then(res => res.json())
+      .then(data => {
+        console.log('[Database] Showroom visit enquiry saved:', data);
+        if (storeBroadcastChannel) {
+          storeBroadcastChannel.postMessage({ type: 'NEW_PROPOSAL', proposal: newVisitEnquiry, timestamp: Date.now() });
+        }
+      })
+      .catch(err => console.warn('Server visit enquiry sync warning:', err));
+  } catch (err) { }
+
+  // 3. Format WhatsApp Notification
+  const waTarget = VERDANTA_WHATSAPP_NUMBER || '918867688699';
+  const waLines = [
+    '🏛️ *SHOWROOM VISIT APPOINTMENT — VERDANTA WORLD* 🏛️',
+    '━━━━━━━━━━━━━━━━━━━━━━━━━',
+    `📋 *Booking ID:* ${newVisitEnquiry.id}`,
+    `👤 *Client Name:* ${name}`,
+    `📞 *Phone:* ${phone}`,
+    `📍 *Location:* ${location}`,
+    `📅 *Preferred Date:* ${date}`,
+    '━━━━━━━━━━━━━━━━━━━━━━━━━',
+    '_Sent via Verdanta World Online Portal_'
+  ];
+  const waUrl = `https://wa.me/${waTarget}?text=${encodeURIComponent(waLines.join('\n'))}`;
+
+  try {
+    window.open(waUrl, '_blank');
+  } catch (e) {
+    window.location.href = waUrl;
+  }
+
+  alert(`Thank you, ${name}!\n\nYour studio visit appointment request for ${date} has been scheduled and recorded in our database (ID: ${newVisitEnquiry.id}).\n\nDetails have been forwarded to our WhatsApp concierge.`);
+
+  const form = document.getElementById('visitForm');
+  if (form) form.reset();
+  closeVisitModal();
 };
 
 // =============================================================================
 // 7. CATALOGUE & SHOWROOM VISIT MODALS
 // =============================================================================
 
-window.openCatalogueModal = function() {
+window.openCatalogueModal = function () {
   document.getElementById('catalogueModal').classList.add('active');
 };
 
-window.closeCatalogueModal = function() {
+window.closeCatalogueModal = function () {
   document.getElementById('catalogueModal').classList.remove('active');
 };
 
-window.simulateDownload = function(filename) {
+window.simulateDownload = function (filename) {
   showToast(`Preparing download for: ${filename}`);
   setTimeout(() => {
     alert(`Downloading "${filename}"\n\nThank you for exploring Verdanta World export collections!`);
@@ -1768,69 +2543,145 @@ window.simulateDownload = function(filename) {
   }, 600);
 };
 
-window.openVisitModal = function() {
+window.openVisitModal = function () {
   document.getElementById('visitModal').classList.add('active');
 };
 
-window.closeVisitModal = function() {
+window.closeVisitModal = function () {
   document.getElementById('visitModal').classList.remove('active');
 };
 
 // =============================================================================
-// 8. LIVE SEARCH SYSTEM
+// 8. LIVE SEARCH SYSTEM (NAME & CATEGORY WITH DEDICATED SEARCH ACTION)
 // =============================================================================
 
-window.openSearch = function() {
+window.populateSearchCategoryDropdown = function () {
+  const select = document.getElementById('searchCategorySelect');
+  if (!select) return;
+  const currentVal = select.value || 'all';
+  select.innerHTML = `
+    <option value="all" ${currentVal === 'all' ? 'selected' : ''}>All Collections</option>
+    ${PRODUCT_CATEGORIES.map(c => `
+      <option value="${escapeHtml(c.id)}" ${currentVal === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>
+    `).join('')}
+  `;
+};
+
+window.openSearch = function () {
+  if (typeof populateSearchCategoryDropdown === 'function') {
+    populateSearchCategoryDropdown();
+  }
   const overlay = document.getElementById('searchOverlay');
-  overlay.classList.add('active');
+  if (overlay) overlay.classList.add('active');
   const input = document.getElementById('searchInput');
   if (input) {
-    input.value = '';
+    input.value = currentSearchQuery || '';
     input.focus();
   }
-  performSearch('');
+  performSearch(input ? input.value : '', 'all');
 };
 
-window.closeSearch = function() {
-  document.getElementById('searchOverlay').classList.remove('active');
+window.closeSearch = function () {
+  const overlay = document.getElementById('searchOverlay');
+  if (overlay) overlay.classList.remove('active');
 };
 
-window.performSearch = function(query) {
+window.executeSearchFromOverlay = function () {
+  const input = document.getElementById('searchInput');
+  const catSelect = document.getElementById('searchCategorySelect');
+  const q = input ? input.value.trim() : '';
+  const cat = catSelect ? catSelect.value : 'all';
+  performSearch(q, cat);
+};
+
+window.viewSearchResultsInCatalog = function (query, categoryId) {
+  closeSearch();
+  currentSearchQuery = query || '';
+  if (categoryId && categoryId !== 'all') {
+    currentCategoryFilter = normalizeCategoryId(categoryId);
+  } else {
+    currentCategoryFilter = 'all';
+  }
+  currentSubCategoryFilter = null;
+  const catInput = document.getElementById('catalogSearchInput');
+  if (catInput) catInput.value = query;
+  renderProductCatalog();
+  const catalogElem = document.getElementById('categories');
+  if (catalogElem) {
+    catalogElem.scrollIntoView({ behavior: 'smooth' });
+  }
+};
+
+window.performSearch = function (query, categoryFilter = 'all') {
   const grid = document.getElementById('searchResultsGrid');
   const input = document.getElementById('searchInput');
+  const catSelect = document.getElementById('searchCategorySelect');
+  if (!grid) return;
+
   if (input && query !== input.value) {
     input.value = query;
   }
+  if (catSelect && categoryFilter && categoryFilter !== catSelect.value) {
+    catSelect.value = categoryFilter;
+  }
 
   const q = (query || '').toLowerCase().trim();
-  const results = q === '' 
-    ? PRODUCTS_DATA.slice(0, 6)
-    : PRODUCTS_DATA.filter(p => 
-        p.title.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q) ||
-        p.subItem.toLowerCase().includes(q) ||
-        p.material.toLowerCase().includes(q)
-      );
+  const selectedCat = categoryFilter || (catSelect ? catSelect.value : 'all');
+
+  const results = PRODUCTS_DATA.filter(p => {
+    // 1. Filter by Category if specified
+    if (selectedCat && selectedCat !== 'all') {
+      const pCatId = p.categoryId || normalizeCategoryId(p.category);
+      if (pCatId !== selectedCat) return false;
+    }
+    // 2. Filter by Search Query
+    if (q === '') return true;
+    return (
+      (p.title && p.title.toLowerCase().includes(q)) ||
+      (p.name && p.name.toLowerCase().includes(q)) ||
+      (p.category && p.category.toLowerCase().includes(q)) ||
+      (p.subItem && p.subItem.toLowerCase().includes(q)) ||
+      (p.subCategory && p.subCategory.toLowerCase().includes(q)) ||
+      (p.material && p.material.toLowerCase().includes(q)) ||
+      (p.craftOrigin && p.craftOrigin.toLowerCase().includes(q)) ||
+      (p.description && p.description.toLowerCase().includes(q))
+    );
+  });
 
   if (results.length === 0) {
     grid.innerHTML = `
       <div style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.7); padding: 40px 0;">
-        <p style="font-size: 1.2rem;">No creations found matching "${query}"</p>
-        <span style="font-size: 0.9rem;">Try searching for lamp, clock, terracotta, tea light, or ESG kit</span>
+        <i class="fa-solid fa-magnifying-glass" style="font-size: 2rem; color: var(--color-gold); margin-bottom: 12px; display: block;"></i>
+        <p style="font-size: 1.15rem; margin: 0 0 6px;">No creations found matching "${escapeHtml(query)}"</p>
+        <span style="font-size: 0.85rem; color: rgba(255,255,255,0.5);">Try selecting "All Collections" or searching for lamp, clock, terracotta, tea light, or brass</span>
       </div>
     `;
     return;
   }
 
-  grid.innerHTML = results.map(p => `
-    <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; overflow: hidden; padding: 12px; display: flex; gap: 12px; align-items: center; cursor: pointer;" onclick="closeSearch(); openQuickView('${p.id}')">
-      <img src="${p.image}" alt="${p.title}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
-      <div>
-        <h5 style="color: #ffffff; font-size: 0.95rem; font-family: var(--font-serif);">${p.title}</h5>
-        <span style="color: var(--color-gold); font-size: 0.75rem;">${p.subItem} • ${p.priceFormatted}</span>
-      </div>
+  grid.innerHTML = `
+    <div style="grid-column: 1/-1; display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.12); margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+      <span style="color: rgba(255,255,255,0.85); font-size: 0.88rem;">
+        Found <strong>${results.length}</strong> matching creation${results.length === 1 ? '' : 's'}
+        ${selectedCat !== 'all' ? ` in <em>${escapeHtml(getCategoryById(selectedCat).name)}</em>` : ''}
+      </span>
+      <button type="button" class="btn btn-sm btn-outline" style="border-color: var(--color-gold); color: var(--color-gold); font-size: 0.8rem; padding: 5px 12px;" onclick="viewSearchResultsInCatalog('${escapeHtml(query)}', '${escapeHtml(selectedCat)}')">
+        <i class="fa-solid fa-arrow-down"></i> View All in Storefront Grid
+      </button>
     </div>
-  `).join('');
+    ${results.slice(0, 16).map(p => `
+      <div style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.16); border-radius: 8px; overflow: hidden; padding: 10px; display: flex; gap: 12px; align-items: center; cursor: pointer; transition: transform 0.2s, background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'" onclick="closeSearch(); openQuickView('${p.id}')">
+        <img src="${p.image}" alt="${escapeHtml(p.title)}" style="width: 58px; height: 58px; object-fit: cover; border-radius: 5px; flex-shrink: 0;" onerror="this.src='images/wooden-gallery.jpg'">
+        <div style="flex: 1; min-width: 0;">
+          <h5 style="color: #ffffff; font-size: 0.92rem; font-family: var(--font-serif); margin: 0 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.title)}</h5>
+          <span style="color: var(--color-gold); font-size: 0.74rem; font-weight: 600; display: block;">${escapeHtml(p.subItem || p.category)} &bull; ${escapeHtml(p.priceFormatted || '₹' + p.price)}</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-primary" style="padding: 6px 10px; font-size: 0.72rem; border-radius: 4px; flex-shrink: 0;" onclick="event.stopPropagation(); closeSearch(); addToCart('${p.id}')" title="Add to Bag">
+          <i class="fa-solid fa-bag-shopping"></i>
+        </button>
+      </div>
+    `).join('')}
+  `;
 };
 
 // =============================================================================
@@ -1850,354 +2701,3 @@ function showToast(message) {
   }, 3500);
 }
 
-// =============================================================================
-// 10. CUSTOMER STOREFRONT ADD PRODUCT PHOTO MODAL & LIVE SYNCHRONIZATION
-// =============================================================================
-
-let custUploadedPhotoDataUrl = '';
-
-window.openCustomerAddProductModal = function(preselectedCatId = '') {
-  const modal = document.getElementById('customerProductModal');
-  const form = document.getElementById('customerProductForm');
-  if (form) form.reset();
-
-  custUploadedPhotoDataUrl = '';
-  const fileInput = document.getElementById('custFileInput');
-  if (fileInput) fileInput.value = '';
-  const urlInput = document.getElementById('custProdCustomImage');
-  if (urlInput) urlInput.value = '';
-
-  if (document.getElementById('custProdMrp')) document.getElementById('custProdMrp').value = '';
-  if (document.getElementById('custProdPrice')) document.getElementById('custProdPrice').value = '';
-  if (typeof calculateDiscountPreview === 'function') calculateDiscountPreview('cust');
-
-  // Populate category dropdown
-  const catSelect = document.getElementById('custProdCategory');
-  if (catSelect) {
-    const currentCatId = preselectedCatId || (PRODUCT_CATEGORIES[0] && PRODUCT_CATEGORIES[0].id) || 'artisan-gallery';
-    catSelect.innerHTML = PRODUCT_CATEGORIES.map(c => `
-      <option value="${c.id}" ${c.id === currentCatId ? 'selected' : ''}>
-        ${escapeHtml(c.name)} (${(c.channel || 'shop').toUpperCase()})
-      </option>
-    `).join('');
-    handleCustomerCategoryChange(currentCatId);
-  }
-
-  // Default preset photo
-  const defaultRadio = document.querySelector('input[name="custImgPreset"][value="images/artisan-gallery.jpg"]');
-  if (defaultRadio) {
-    defaultRadio.checked = true;
-    showCustomerPhotoPreview('images/artisan-gallery.jpg', 'Craft Preset: Pottery');
-  }
-
-  if (modal) modal.classList.add('active');
-};
-
-window.closeCustomerAddProductModal = function() {
-  const modal = document.getElementById('customerProductModal');
-  if (modal) modal.classList.remove('active');
-};
-
-window.handleCustomerCategoryChange = function(catId) {
-  const cat = getCategoryById(catId);
-  if (!cat) return;
-
-  const subCats = getAllSubCategoriesForCategory(cat.id);
-  const subSelect = document.getElementById('custProdSubItem');
-  const customInput = document.getElementById('custProdSubItemCustom');
-
-  if (subSelect) {
-    let html = subCats.map(sub => `<option value="${escapeHtml(sub)}">${escapeHtml(sub)}</option>`).join('');
-    html += `<option value="__custom__">+ Add Custom Subtitle Category...</option>`;
-    subSelect.innerHTML = html;
-    if (customInput) customInput.style.display = 'none';
-  }
-};
-
-window.handleCustomerSubCategoryChange = function(val) {
-  const customInput = document.getElementById('custProdSubItemCustom');
-  if (val === '__custom__') {
-    if (customInput) {
-      customInput.style.display = 'block';
-      customInput.focus();
-    }
-  } else {
-    if (customInput) customInput.style.display = 'none';
-  }
-};
-
-window.handleCustomerDropFile = function(event) {
-  event.preventDefault();
-  const dropzone = document.getElementById('custPhotoDropzone');
-  if (dropzone) dropzone.style.borderColor = '';
-  if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {
-    const fakeEvent = { target: { files: event.dataTransfer.files } };
-    window.handleCustomerImageUpload(fakeEvent);
-  }
-};
-
-window.handleCustomerImageUpload = function(event) {
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
-
-  if (file.size > 20 * 1024 * 1024) {
-    alert('Please choose an image file under 20MB.');
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = new Image();
-    img.onload = async function() {
-      const maxDim = 900;
-      let width = img.width;
-      let height = img.height;
-      if (width > maxDim || height > maxDim) {
-        if (width > height) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        } else {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
-        }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
-
-      custUploadedPhotoDataUrl = dataUrl;
-      showCustomerPhotoPreview(dataUrl, 'Saving Photo to Disk...');
-
-      // Save directly to server disk as an actual image file
-      const savedDiskUrl = await uploadImageToServer(dataUrl);
-      if (savedDiskUrl) {
-        custUploadedPhotoDataUrl = savedDiskUrl;
-        showCustomerPhotoPreview(savedDiskUrl, 'Saved to Server Disk');
-      } else {
-        showCustomerPhotoPreview(dataUrl, 'Photo Ready');
-      }
-
-      const customInput = document.getElementById('custProdCustomImage');
-      if (customInput) customInput.value = '';
-      document.querySelectorAll('input[name="custImgPreset"]').forEach(r => r.checked = false);
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-};
-
-window.handleCustomerImageUrlInput = function(val) {
-  const url = (val || '').trim();
-  if (url) {
-    custUploadedPhotoDataUrl = '';
-    const fileInput = document.getElementById('custFileInput');
-    if (fileInput) fileInput.value = '';
-    document.querySelectorAll('input[name="custImgPreset"]').forEach(r => r.checked = false);
-    showCustomerPhotoPreview(url, 'Custom Image Link');
-  }
-};
-
-window.handleCustomerPresetSelect = function(val) {
-  custUploadedPhotoDataUrl = '';
-  const fileInput = document.getElementById('custFileInput');
-  if (fileInput) fileInput.value = '';
-  const customInput = document.getElementById('custProdCustomImage');
-  if (customInput) customInput.value = '';
-  showCustomerPhotoPreview(val, 'Craft Preset Selected');
-};
-
-function showCustomerPhotoPreview(src, label) {
-  const wrap = document.getElementById('custPhotoPreviewWrap');
-  const img = document.getElementById('custPhotoPreviewImg');
-  const tag = document.getElementById('custPreviewSourceTag');
-  const prompt = document.getElementById('custDropzonePrompt');
-  if (wrap && img) {
-    img.src = src;
-    if (tag) tag.textContent = label || 'Photo Preview';
-    wrap.style.display = 'flex';
-    if (prompt) prompt.style.display = 'none';
-  }
-}
-
-window.removeCustomerUploadedImage = function() {
-  custUploadedPhotoDataUrl = '';
-  const fileInput = document.getElementById('custFileInput');
-  if (fileInput) fileInput.value = '';
-  const customInput = document.getElementById('custProdCustomImage');
-  if (customInput) customInput.value = '';
-
-  const wrap = document.getElementById('custPhotoPreviewWrap');
-  const prompt = document.getElementById('custDropzonePrompt');
-  if (wrap) wrap.style.display = 'none';
-  if (prompt) prompt.style.display = 'block';
-
-  // Fallback to first preset
-  const firstPreset = document.querySelector('input[name="custImgPreset"]');
-  if (firstPreset) {
-    firstPreset.checked = true;
-    showCustomerPhotoPreview(firstPreset.value, 'Craft Preset: Pottery');
-  }
-};
-
-window.calculateDiscountPreview = function(context = 'cust') {
-  const mrpInput = document.getElementById(context === 'admin' ? 'prodMrp' : 'custProdMrp');
-  const priceInput = document.getElementById(context === 'admin' ? 'prodPrice' : 'custProdPrice');
-  const badgeEl = document.getElementById(context === 'admin' ? 'adminDiscountSavings' : 'custDiscountSavings');
-  if (!mrpInput || !priceInput || !badgeEl) return;
-
-  const mrp = parseFloat(mrpInput.value) || 0;
-  const price = parseFloat(priceInput.value) || 0;
-
-  if (mrp > 0 && price > 0) {
-    if (price < mrp) {
-      const savings = mrp - price;
-      const pct = Math.round((savings / mrp) * 100);
-      badgeEl.className = 'discount-savings-calc pricing-preview-success';
-      badgeEl.style.display = 'flex';
-      badgeEl.innerHTML = `<i class="fa-solid fa-tags"></i> <span><strong>${pct}% OFF</strong> — Customer saves ₹${savings.toLocaleString('en-IN')}</span>`;
-    } else if (price > mrp) {
-      badgeEl.className = 'discount-savings-calc pricing-preview-warning';
-      badgeEl.style.display = 'flex';
-      badgeEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <span>Note: Discount Price (₹${price.toLocaleString('en-IN')}) is higher than MRP (₹${mrp.toLocaleString('en-IN')}).</span>`;
-    } else {
-      badgeEl.style.display = 'none';
-    }
-  } else {
-    badgeEl.style.display = 'none';
-  }
-};
-
-window.handleCustomerProductSubmit = async function(event) {
-  event.preventDefault();
-
-  const title = document.getElementById('custProdTitle').value.trim();
-  const categoryId = document.getElementById('custProdCategory').value;
-  const categoryObj = getCategoryById(categoryId);
-  const category = categoryObj.name;
-
-  const mrpVal = document.getElementById('custProdMrp') ? document.getElementById('custProdMrp').value : '';
-  let mrp = mrpVal !== '' ? parseInt(mrpVal, 10) : null;
-
-  const priceVal = document.getElementById('custProdPrice').value;
-  const price = priceVal !== '' ? parseInt(priceVal, 10) : (mrp !== null ? mrp : 0);
-  if ((!mrp || mrp <= price) && price > 0) {
-    mrp = Math.round((price * 1.35) / 50) * 50;
-    if (mrp <= price) mrp = price + 500;
-  }
-  const discountPercent = (mrp && mrp > price && price > 0) ? Math.round(((mrp - price) / mrp) * 100) : 0;
-
-  const subSelect = document.getElementById('custProdSubItem');
-  const customInput = document.getElementById('custProdSubItemCustom');
-  let subItem = (subSelect && subSelect.value !== '__custom__') ? subSelect.value : '';
-  if (subSelect && subSelect.value === '__custom__' && customInput && customInput.value.trim()) {
-    subItem = customInput.value.trim();
-  }
-  if (!subItem) subItem = 'Featured Creations';
-
-  // Persist new subcategory if novel
-  if (categoryObj) {
-    if (!categoryObj.subCategories) categoryObj.subCategories = [];
-    if (!categoryObj.subCategories.includes(subItem)) {
-      categoryObj.subCategories.push(subItem);
-      try {
-        localStorage.setItem('verdanta_categories', JSON.stringify(PRODUCT_CATEGORIES));
-      } catch (e) {}
-    }
-  }
-
-  // Determine image source
-  let image = custUploadedPhotoDataUrl || '';
-  if (!image) {
-    const customImg = document.getElementById('custProdCustomImage').value.trim();
-    if (customImg) {
-      image = customImg;
-    } else {
-      const selectedRadio = document.querySelector('input[name="custImgPreset"]:checked');
-      image = selectedRadio ? selectedRadio.value : 'images/artisan-gallery.jpg';
-    }
-  }
-
-  // Upload to disk if still base64
-  if (image && image.startsWith('data:image')) {
-    const savedUrl = await uploadImageToServer(image);
-    if (savedUrl) image = savedUrl;
-  }
-
-  const badge = document.getElementById('custProdBadge').value || 'New Arrival';
-  const origin = document.getElementById('custProdOrigin').value.trim() || 'Handcrafted in India';
-  const description = document.getElementById('custProdDescription').value.trim() || '';
-
-  const newProduct = {
-    id: 'prod-' + Date.now(),
-    name: title,
-    title: title,
-    categoryId: categoryId,
-    category: category,
-    subItem: subItem,
-    mrp: mrp,
-    mrpFormatted: mrp > 0 ? '₹' + mrp.toLocaleString('en-IN') : null,
-    price: price,
-    discountPercent: discountPercent,
-    priceFormatted: price > 0 ? '₹' + price.toLocaleString('en-IN') : '₹0',
-    badge: badge,
-    image: image,
-    origin: origin,
-    material: 'Natural Materials',
-    description: description,
-    createdAt: new Date().toISOString()
-  };
-
-  PRODUCTS_DATA.unshift(newProduct);
-
-  // Save to localStorage safely
-  try {
-    localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
-  } catch (err) {}
-
-  // Sync to server backend
-  fetch(getApiUrl('/api/products'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(PRODUCTS_DATA)
-  }).then(res => res.json())
-    .then(data => {
-      if (data && data.products) {
-        PRODUCTS_DATA = data.products.map(normalizeProduct);
-        try {
-          localStorage.setItem('verdanta_products', JSON.stringify(PRODUCTS_DATA));
-        } catch (e) {}
-      }
-    })
-    .catch(() => {});
-
-  // Re-render storefront catalog & category tabs
-  renderCategoryTabs();
-  renderCategoryCardsGrid();
-  renderProductCatalog();
-  closeCustomerAddProductModal();
-
-  showToast(`✨ "${title}" added with photo! Visible live in the customer catalog.`);
-
-  // Scroll to new product card with glowing outline
-  setTimeout(() => {
-    const card = document.getElementById(`card-${newProduct.id}`);
-    if (card) {
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      card.classList.add('product-card-highlight');
-      setTimeout(() => card.classList.remove('product-card-highlight'), 3500);
-    }
-  }, 350);
-
-  // Notify other tabs and windows
-  try {
-    localStorage.setItem('verdanta_sync_trigger', String(Date.now()));
-    window.dispatchEvent(new Event('storage'));
-    window.dispatchEvent(new CustomEvent('verdanta-products-updated', { detail: PRODUCTS_DATA }));
-    if (storeBroadcastChannel) {
-      storeBroadcastChannel.postMessage({ type: 'PRODUCTS_UPDATED', timestamp: Date.now() });
-    }
-  } catch (e) {}
-};

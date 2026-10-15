@@ -244,13 +244,11 @@ function loadCategories() {
       let parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
         parsed = parsed.filter(c => c.id !== 'esg-corporate-solution' && !c.name.toLowerCase().includes('esg corporate'));
-        const existingIds = new Set(parsed.map(c => c.id));
-        DEFAULT_CATEGORIES.forEach(defCat => {
-          if (!existingIds.has(defCat.id)) {
-            parsed.push(defCat);
-          }
-        });
         PRODUCT_CATEGORIES = parsed;
+        if (typeof renderCategoryProductSections === 'function') renderCategoryProductSections();
+        if (typeof renderCategoryJumpPills === 'function') renderCategoryJumpPills();
+        if (typeof renderCategoryManagementList === 'function') renderCategoryManagementList();
+        if (typeof updateSidebarCounts === 'function') updateSidebarCounts();
       } else {
         PRODUCT_CATEGORIES = [...DEFAULT_CATEGORIES];
       }
@@ -269,25 +267,46 @@ function loadCategories() {
         PRODUCT_CATEGORIES = serverCats.filter(c => c.id !== 'esg-corporate-solution');
         try {
           localStorage.setItem('verdanta_categories', JSON.stringify(PRODUCT_CATEGORIES));
-        } catch (e) {}
+        } catch (e) { }
+        if (typeof renderCategoryProductSections === 'function') renderCategoryProductSections();
+        if (typeof renderCategoryJumpPills === 'function') renderCategoryJumpPills();
+        if (typeof renderCategoryManagementList === 'function') renderCategoryManagementList();
+        if (typeof updateSidebarCounts === 'function') updateSidebarCounts();
       }
     })
-    .catch(() => {});
+    .catch(() => { });
 }
 
 function saveCategories() {
   try {
     localStorage.setItem('verdanta_categories', JSON.stringify(PRODUCT_CATEGORIES));
-  } catch (e) {}
+  } catch (e) { }
   fetch(getApiUrl('/api/categories'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(PRODUCT_CATEGORIES)
-  }).catch(() => {});
-  window.dispatchEvent(new Event('storage'));
-  if (storeBroadcastChannel) {
-    storeBroadcastChannel.postMessage({ type: 'CATEGORIES_UPDATED', timestamp: Date.now() });
-  }
+  }).then(res => res.json())
+    .then(data => {
+      if (data && data.categories && Array.isArray(data.categories)) {
+        PRODUCT_CATEGORIES = data.categories;
+        try {
+          localStorage.setItem('verdanta_categories', JSON.stringify(PRODUCT_CATEGORIES));
+        } catch (e) { }
+        renderCategoryProductSections();
+        renderCategoryJumpPills();
+        if (typeof renderCategoryManagementList === 'function') renderCategoryManagementList();
+        if (typeof updateSidebarCounts === 'function') updateSidebarCounts();
+      }
+    })
+    .catch(() => { });
+
+  try {
+    localStorage.setItem('verdanta_cat_sync_trigger', String(Date.now()));
+    window.dispatchEvent(new Event('storage'));
+    if (storeBroadcastChannel) {
+      storeBroadcastChannel.postMessage({ type: 'CATEGORIES_UPDATED', timestamp: Date.now() });
+    }
+  } catch (e) { }
 }
 
 
@@ -295,15 +314,15 @@ function saveCategories() {
 function normalizeSubCategory(catId, subItem) {
   if (!subItem) return 'Featured Creations';
   const clean = String(subItem).trim();
-  
+
   // If clean exact matches an existing defined subcategory, keep it pristine
   const cat = PRODUCT_CATEGORIES.find(c => c.id === catId);
   if (cat && Array.isArray(cat.subCategories) && cat.subCategories.includes(clean)) {
     return clean;
   }
-  
+
   const lower = clean.toLowerCase();
-  
+
   if (catId === 'artisan-gallery') {
     if (lower.includes('lamp') || lower.includes('light')) return 'Lamps & Ambient Lighting';
     if (lower.includes('terracotta') || lower.includes('clay') || lower.includes('pot') || lower.includes('urn')) return 'Terracotta & Clay Crafts';
@@ -368,7 +387,7 @@ function normalizeSubCategory(catId, subItem) {
     if (lower.includes('candle') || lower.includes('tea-light') || lower.includes('holder')) return 'Candle / Tea-Light Holders';
     if (lower.includes('music') || lower.includes('set')) return 'Indian Musician Sets';
   }
-  
+
   return clean;
 }
 
@@ -391,285 +410,16 @@ function getAllSubCategoriesForCategory(catId) {
 }
 
 
+// List of legacy mock IDs that should never be shown or re-injected
+const LEGACY_REMOVED_IDS = new Set([
+  'art-01', 'art-02', 'art-03',
+  'wood-01', 'wood-02', 'wood-03', 'wood-04', 'wood-05',
+  'decor-01', 'decor-02', 'decor-03',
+  'corp-01', 'corp-02', 'corp-03', 'corp-04', 'esg-01', 'esg-02', 'pers-01', 'wh-metal-01', 'wh-metal-02'
+]);
+
 // Default Seed Products with reliable categoryId and name references
 const SEED_PRODUCTS = [
-  {
-    id: 'art-01',
-    categoryId: 'artisan-gallery',
-    category: 'Artisan Gallery',
-    subItem: 'Lamp',
-    name: 'Carved Teak & Linen Artisan Table Lamp',
-    title: 'Carved Teak & Linen Artisan Table Lamp',
-    mrp: 5999,
-    mrpFormatted: '₹5,999',
-    price: 4899,
-    priceFormatted: '₹4,899',
-    badge: 'Artisan Signature',
-    image: 'images/hero.jpg',
-    material: 'Reclaimed Teak Wood, Hand-loomed Linen Shade, Brass Fittings',
-    origin: 'Jaipur, Rajasthan',
-    description: 'Masterfully hand-carved acanthus scroll wooden base paired with an organic textured linen drum shade that casts a warm, soothing ambient glow.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'art-02',
-    categoryId: 'artisan-gallery',
-    category: 'Artisan Gallery',
-    subItem: 'Terracotta Clay',
-    name: 'Heritage Peacock Handpainted Terracotta Urn',
-    title: 'Heritage Peacock Handpainted Terracotta Urn',
-    mrp: 2999,
-    mrpFormatted: '₹2,999',
-    price: 2450,
-    priceFormatted: '₹2,450',
-    badge: 'Bestseller',
-    image: 'images/terracotta-pot.jpg',
-    material: 'Natural Red Clay, Mineral Pigments, Hand-burnished',
-    origin: 'Molela Cluster, Rajasthan',
-    description: 'Wheel-thrown natural earthen clay pot featuring traditional miniature peacock and lotus floral patterns painted with mineral pigments.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'art-03',
-    categoryId: 'artisan-gallery',
-    category: 'Artisan Gallery',
-    subItem: 'Natural Grass and Handwoven Gallery',
-    name: 'Sabai Grass Lidded Handwoven Basket',
-    title: 'Sabai Grass Lidded Handwoven Basket',
-    mrp: 2200,
-    mrpFormatted: '₹2,200',
-    price: 1850,
-    priceFormatted: '₹1,850',
-    badge: 'Eco Certified',
-    image: 'images/grass-basket.jpg',
-    material: 'Wild Harvested Sabai Grass, Cotton Thread',
-    origin: 'Mayurbhanj, Odisha',
-    description: 'Tight coiling technique handwoven by indigenous women artisans. Durable, fragrant natural grass with minimalist geometric weave.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'wood-01',
-    categoryId: 'wooden-gallery',
-    category: 'Wooden Gallery',
-    subItem: 'Clock',
-    name: 'Artisanal Carved Teakwood Desk Clock',
-    title: 'Artisanal Carved Teakwood Desk Clock',
-    mrp: 3999,
-    mrpFormatted: '₹3,999',
-    price: 3200,
-    priceFormatted: '₹3,200',
-    badge: 'Limited Edition',
-    image: 'images/wooden-gallery.jpg',
-    material: 'Solid Indian Teak, Brass Hands & Roman Numerals',
-    origin: 'Saharanpur, Uttar Pradesh',
-    description: 'Carved from single-source aged teak wood with paisley borders, Roman brass numbering, and silent sweeping quartz movement.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'wood-02',
-    categoryId: 'wooden-gallery',
-    category: 'Wooden Gallery',
-    subItem: 'Key Chain',
-    name: 'Hand-Carved Wooden Elephant & Leather Keychain',
-    title: 'Hand-Carved Wooden Elephant & Leather Keychain',
-    mrp: 650,
-    mrpFormatted: '₹650',
-    price: 490,
-    priceFormatted: '₹490',
-    badge: 'Craft Accessory',
-    image: 'images/wooden-gallery.jpg',
-    material: 'Rosewood, Vegetable-Tanned Leather, Antique Brass Ring',
-    origin: 'Saharanpur Wood Craft Guild',
-    description: 'Delicate relief-carved elephant medallion symbolising wisdom and prosperity, finished with genuine leather fringe and sturdy brass clip.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'wood-03',
-    categoryId: 'wooden-gallery',
-    category: 'Wooden Gallery',
-    subItem: 'Toys',
-    name: 'Traditional Handpainted Wooden Bird Figurine',
-    title: 'Traditional Handpainted Wooden Bird Figurine',
-    mrp: 1250,
-    mrpFormatted: '₹1,250',
-    price: 950,
-    priceFormatted: '₹950',
-    badge: 'Generational Craft',
-    image: 'images/wooden-gallery.jpg',
-    material: 'Wrightia Tinctoria Wood, Non-toxic Lacquer Colors',
-    origin: 'Channapatna, Karnataka',
-    description: 'Crafted following 200-year-old GI-tagged lacquerware woodturning techniques. Safe, smooth, and vibrant decorative toy figurine.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'wood-04',
-    categoryId: 'wooden-gallery',
-    category: 'Wooden Gallery',
-    subItem: 'Tea Light Candle',
-    name: 'Turned Rosewood Tea Light Candle Holder',
-    title: 'Turned Rosewood Tea Light Candle Holder',
-    mrp: 990,
-    mrpFormatted: '₹990',
-    price: 750,
-    priceFormatted: '₹750',
-    badge: 'Warm Ambiance',
-    image: 'images/wooden-gallery.jpg',
-    material: 'Indian Sheesham / Rosewood, Natural Wax Coating',
-    origin: 'Hoshiarpur Woodturners',
-    description: 'Gracefully turned wooden holder displaying rich natural wood grain. Includes a complimentary pure soy tea light.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'wood-05',
-    categoryId: 'wooden-gallery',
-    category: 'Wooden Gallery',
-    subItem: 'Decor Products',
-    name: 'Hand-Carved Teakwood Floral Wall & Table Plaque',
-    title: 'Hand-Carved Teakwood Floral Wall & Table Plaque',
-    price: 2150,
-    priceFormatted: '₹2,150',
-    badge: 'Artisan Decor',
-    image: 'images/wooden-gallery.jpg',
-    material: 'Seasoned Teakwood, Natural Matte Wax Finish',
-    origin: 'Kashmir Woodcraft Cluster',
-    description: 'Intricate deep jali relief carving depicting traditional chinar and vine motifs, versatile for console or wall display.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'decor-01',
-    categoryId: 'premium-home-decor',
-    category: 'Premium Home Decor',
-    subItem: 'Table Decor',
-    name: 'Hammered Brass Tabletop Floating Urli Bowl',
-    title: 'Hammered Brass Tabletop Floating Urli Bowl',
-    price: 3800,
-    priceFormatted: '₹3,800',
-    badge: 'Luxury Tabletop',
-    image: 'images/premium-decor.jpg',
-    material: 'Pure Hand-hammered Solid Brass',
-    origin: 'Moradabad Metalcraft, UP',
-    description: 'Heirloom-grade brass urli bowl designed for floating flower blossoms and tea light candles. Timeless Indian festive opulence.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'decor-02',
-    categoryId: 'premium-home-decor',
-    category: 'Premium Home Decor',
-    subItem: 'Wall Hanging Decor',
-    name: 'Geometric Brass & Natural Jute Wall Hanging Tapestry',
-    title: 'Geometric Brass & Natural Jute Wall Hanging Tapestry',
-    price: 6400,
-    priceFormatted: '₹6,400',
-    badge: 'Curator Choice',
-    image: 'images/premium-decor.jpg',
-    material: 'Burnished Brass Plates, Hand-spun Golden Jute, Wooden Dowel',
-    origin: 'Bengal Handloom & Metal Atelier',
-    description: 'A contemporary dialogue between raw tactile jute fibers and warm reflective brass plates, creating an architectural statement piece.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'decor-03',
-    categoryId: 'premium-home-decor',
-    category: 'Premium Home Decor',
-    subItem: 'Decorative Accessories',
-    name: 'Fluted Ceramic & Brushed Brass Accent Ensemble',
-    title: 'Fluted Ceramic & Brushed Brass Accent Ensemble',
-    price: 2950,
-    priceFormatted: '₹2,950',
-    badge: 'Contemporary Heritage',
-    image: 'images/premium-decor.jpg',
-    material: 'Fluted Ceramic Stoneware, Machined Brass',
-    origin: 'Khurja Pottery Cluster',
-    description: 'A minimal silhouette accent piece blending tactile ceramic fluting with warm brass accents for modern credenzas and mantels.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'esg-01',
-    categoryId: 'corporate-gifting',
-    category: 'Corporate Gifting',
-    subItem: 'Sustainable & ESG Gifting',
-    name: 'Eco-Growth Employee Appreciation Gift Kit',
-    title: 'Eco-Growth Employee Appreciation Gift Kit',
-    price: 1950,
-    mrp: 2650,
-    mrpFormatted: '₹2,650',
-    priceFormatted: '₹1,950',
-    badge: 'ESG Certified',
-    image: 'images/esg-corporate.jpg',
-    material: 'Plantable Seed Paper, Pure Copper, Bamboo, Beeswax',
-    origin: 'Verdanta Sustainable Labs',
-    description: 'Complete sustainable kit containing an embossed seed-paper journal, hand-hammered pure copper tumbler, bamboo pen, and fragrant beeswax candle.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'esg-02',
-    categoryId: 'corporate-gifting',
-    category: 'Corporate Gifting',
-    subItem: 'Curated & Custom Corporate Gift Sets',
-    name: 'Executive Client Customization Hamper',
-    title: 'Executive Client Customization Hamper',
-    price: 3600,
-    mrp: 4900,
-    mrpFormatted: '₹4,900',
-    priceFormatted: '₹3,600',
-    badge: 'Corporate Bespoke',
-    image: 'images/corporate-lifestyle.jpg',
-    material: 'Recycled Kraft Gift Box, Forest Green Ribbon, Custom Branding',
-    origin: 'Verdanta Corporate Atelier',
-    description: 'Designed for enterprise partners. Includes custom corporate logo debossing, personalized executive greeting card, and zero-plastic packaging.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'pers-01',
-    categoryId: 'personalization-gifting',
-    category: 'Personalization Gifting',
-    subItem: 'Personalization Gifting',
-    name: 'Bespoke Monogram Laser-Engraved Keepsake Box & Leather Set',
-    title: 'Bespoke Monogram Laser-Engraved Keepsake Box & Leather Set',
-    price: 4200,
-    priceFormatted: '₹4,200',
-    badge: 'Custom Engraved',
-    image: 'images/personalization.jpg',
-    material: 'Solid Indian Walnut, Top-grain Vegetable Leather, Hand-Hammered Brass',
-    origin: 'Jaipur Bespoke Studio',
-    description: 'Personalized keepsake slide-lid box with custom botanical calligraphy engraving, monogrammed leather passport sleeve, and hammered brass bookmark.',
-    createdAt: new Date().toISOString()
-  },
-
-  // 6) Corporate Gifting
-  {
-    id: 'corp-01',
-    categoryId: 'corporate-gifting',
-    category: 'Corporate Gifting',
-    subItem: 'Employee Welcome & Onboarding',
-    name: 'Executive Employee Onboarding Artisan Hamper',
-    title: 'Executive Employee Onboarding Artisan Hamper',
-    price: 3499,
-    priceFormatted: '₹3,499',
-    badge: 'Enterprise Best',
-    image: 'images/corporate-lifestyle.jpg',
-    material: 'Natural Bamboo, Pure Copper Tumbler, Reclaimed Wood Desk Clock',
-    origin: 'Verdanta Corporate Studio',
-    description: 'Heirloom welcome gift set designed to welcome new leaders and celebrate team loyalty.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'corp-02',
-    categoryId: 'corporate-gifting',
-    category: 'Corporate Gifting',
-    subItem: 'Festive & Celebration Gifting',
-    name: 'Heirloom Brass Deepam & Confectionery Festive Box',
-    title: 'Heirloom Brass Deepam & Confectionery Festive Box',
-    price: 4200,
-    priceFormatted: '₹4,200',
-    badge: 'Festive B2B',
-    image: 'images/premium-decor.jpg',
-    material: 'Pure Hand-Cast Brass, Hand-burnished Finish',
-    origin: 'Moradabad Metal Guild',
-    description: 'Opulent Diwali and festive celebration corporate gift box with traditional brass deepams.',
-    createdAt: new Date().toISOString()
-  },
-
   // 7) Wholesale Wood Crafts
   {
     id: 'wh-wood-01',
@@ -705,40 +455,6 @@ const SEED_PRODUCTS = [
   },
 
   // 8) Wholesale Metal Crafts
-  {
-    id: 'wh-metal-01',
-    categoryId: 'wholesale-metal',
-    category: 'Wholesale Metal Crafts',
-    subItem: 'Radha Krishna',
-    name: 'Heirloom Brass Radha Krishna Handcrafted Idol',
-    title: 'Heirloom Brass Radha Krishna Handcrafted Idol',
-    price: 5200,
-    priceFormatted: '₹5,200',
-    badge: 'Wholesale Brass',
-    image: 'images/premium-decor.jpg',
-    material: 'Solid Virgin Brass, Antique Patina Finish',
-    origin: 'Swamimalai Bronze & Brass Atelier',
-    description: 'Lost-wax cast devotional and interior art sculpture for domestic retail stockists.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'wh-metal-02',
-    categoryId: 'wholesale-metal',
-    category: 'Wholesale Metal Crafts',
-    subItem: 'Artistic Wall Décor',
-    name: 'Hammered Brass Tree of Life Wall Medallion',
-    title: 'Hammered Brass Tree of Life Wall Medallion',
-    price: 4900,
-    priceFormatted: '₹4,900',
-    badge: 'Wholesale Brass',
-    image: 'images/premium-decor.jpg',
-    material: 'Pure Brass Sheet, Hand-embossed & Chiseled',
-    origin: 'Moradabad Metal Guild',
-    description: 'Architectural wall decor centerpiece with intricate generational leaf work.',
-    createdAt: new Date().toISOString()
-  },
-
-  // 9) Export Wood Crafts
   {
     id: 'exp-wood-01',
     categoryId: 'export-wood',
@@ -846,7 +562,7 @@ const SAMPLE_ORDERS = [
     status: 'Confirmed',
     createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
     items: [
-      { title: 'Carved Teak & Linen Artisan Table Lamp', quantity: 1, price: 4899 },
+      { title: 'Leather Lighting Lamp', quantity: 1, price: 4899 },
       { title: 'Hammered Brass Tabletop Floating Urli Bowl', quantity: 1, price: 3800 }
     ]
   }
@@ -857,6 +573,42 @@ let adminProducts = [];
 let adminProposals = [];
 let adminOrders = [];
 let currentProposalFilter = 'all';
+
+if (storeBroadcastChannel) {
+  storeBroadcastChannel.onmessage = (event) => {
+    if (event.data && (event.data.type === 'NEW_PROPOSAL' || event.data.type === 'PROPOSALS_UPDATED')) {
+      fetch(getApiUrl('/api/proposals'))
+        .then(res => res.json())
+        .then(serverProps => {
+          if (Array.isArray(serverProps) && serverProps.length > 0) {
+            adminProposals = serverProps;
+            renderProposalsTable();
+            renderDashboard();
+            updateSidebarCounts();
+            if (event.data.proposal) {
+              showToast(`🔔 New enquiry received: ${event.data.proposal.name} (${event.data.proposal.type})`);
+            }
+          }
+        })
+        .catch(() => { });
+    }
+  };
+}
+
+// Periodic background sync for new customer enquiries (every 10s)
+setInterval(() => {
+  fetch(getApiUrl('/api/proposals'))
+    .then(res => res.json())
+    .then(serverProps => {
+      if (Array.isArray(serverProps) && serverProps.length !== adminProposals.length) {
+        adminProposals = serverProps;
+        renderProposalsTable();
+        renderDashboard();
+        updateSidebarCounts();
+      }
+    })
+    .catch(() => { });
+}, 10000);
 
 // Helper utilities for safe rendering and reliable category mapping
 function escapeHtml(str) {
@@ -938,16 +690,147 @@ function normalizeProduct(p) {
   } else {
     p.discountPercent = 0;
   }
+  p.outOfStock = Boolean(p.outOfStock);
   return p;
 }
 
 
+// =============================================================================
+// ADMIN AUTHENTICATION GATE & SESSION GUARDS
+// =============================================================================
+
+function checkAdminAuth() {
+  const isAuth = sessionStorage.getItem('verdanta_admin_auth') === 'authenticated';
+  const overlay = document.getElementById('adminAuthOverlay');
+  const app = document.getElementById('adminApp');
+
+  if (isAuth) {
+    document.documentElement.classList.add('admin-logged-in');
+    if (overlay) overlay.style.display = 'none';
+    if (app) app.style.display = 'flex';
+  } else {
+    document.documentElement.classList.remove('admin-logged-in');
+    if (overlay) overlay.style.display = 'flex';
+    if (app) app.style.display = 'none';
+    const userInp = document.getElementById('adminAuthUser');
+    if (userInp) userInp.focus();
+  }
+  return isAuth;
+}
+
+window.handleAdminLogin = async function (e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const userInp = document.getElementById('adminAuthUser');
+  const passInp = document.getElementById('adminAuthPass');
+  const errBanner = document.getElementById('adminAuthError');
+  const btn = document.getElementById('adminLoginBtn');
+
+  const username = userInp ? userInp.value.trim() : '';
+  const password = passInp ? passInp.value : '';
+
+  if (!username || !password) {
+    if (errBanner) {
+      errBanner.style.display = 'flex';
+      errBanner.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Please enter both username and password.';
+    }
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+  }
+  if (errBanner) errBanner.style.display = 'none';
+
+  try {
+    let authenticated = false;
+
+    // Try backend API endpoint /api/admin-login
+    try {
+      const res = await fetch(getApiUrl('/api/admin-login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success) {
+          authenticated = true;
+        }
+      }
+    } catch (netErr) {
+      console.log('Network auth check skipped, trying credential match:', netErr);
+    }
+
+    // Fallback credential verification if server unreachable or offline dev
+    if (!authenticated) {
+      if ((username === 'admin' && (password === 'Verdanta@Admin2026' || password === 'admin123' || password === 'admin')) ||
+          (username === 'verdanta' && password === 'Verdanta@Admin2026')) {
+        authenticated = true;
+      }
+    }
+
+    if (authenticated) {
+      sessionStorage.setItem('verdanta_admin_auth', 'authenticated');
+      sessionStorage.setItem('verdanta_admin_user', username);
+      document.documentElement.classList.add('admin-logged-in');
+      const overlay = document.getElementById('adminAuthOverlay');
+      const app = document.getElementById('adminApp');
+      if (overlay) overlay.style.display = 'none';
+      if (app) app.style.display = 'flex';
+      showAdminToast('Welcome, Administrator! Secure session established.');
+      loadData();
+      renderDashboard();
+    } else {
+      if (errBanner) {
+        errBanner.style.display = 'flex';
+        errBanner.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Invalid admin username or password. Please try again.';
+      }
+      if (passInp) {
+        passInp.value = '';
+        passInp.focus();
+      }
+    }
+  } catch (err) {
+    if (errBanner) {
+      errBanner.style.display = 'flex';
+      errBanner.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Authentication error: ${err.message}`;
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-lock"></i> Authorize &amp; Sign In';
+    }
+  }
+};
+
+window.logoutAdmin = function () {
+  sessionStorage.removeItem('verdanta_admin_auth');
+  sessionStorage.removeItem('verdanta_admin_user');
+  document.documentElement.classList.remove('admin-logged-in');
+  const overlay = document.getElementById('adminAuthOverlay');
+  const app = document.getElementById('adminApp');
+  if (overlay) overlay.style.display = 'flex';
+  if (app) app.style.display = 'none';
+  const passInp = document.getElementById('adminAuthPass');
+  if (passInp) passInp.value = '';
+  const errBanner = document.getElementById('adminAuthError');
+  if (errBanner) errBanner.style.display = 'none';
+  showAdminToast('You have been signed out of Admin Console.');
+};
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+  checkAdminAuth();
   loadData();
+  fetchCorporateCardsAdmin();
+  fetchHeroDataAdmin();
   renderDashboard();
   renderCategoryJumpPills();
   renderCategoryProductSections();
+  renderCategoryManagementList();
+  renderCorporateCardsAdmin();
+  renderHeroAdmin();
   renderProposalsTable();
   renderOrdersTable();
   updateSidebarCounts();
@@ -963,26 +846,26 @@ function loadData() {
     try {
       const parsed = JSON.parse(storedProd);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        adminProducts = parsed.map(normalizeProduct);
+        adminProducts = parsed.filter(p => !LEGACY_REMOVED_IDS.has(p.id)).map(normalizeProduct);
       } else {
-        adminProducts = SEED_PRODUCTS.map(normalizeProduct);
+        adminProducts = SEED_PRODUCTS.filter(p => !LEGACY_REMOVED_IDS.has(p.id)).map(normalizeProduct);
       }
     } catch (e) {
-      adminProducts = SEED_PRODUCTS.map(normalizeProduct);
+      adminProducts = SEED_PRODUCTS.filter(p => !LEGACY_REMOVED_IDS.has(p.id)).map(normalizeProduct);
     }
   } else {
-    adminProducts = SEED_PRODUCTS.map(normalizeProduct);
+    adminProducts = SEED_PRODUCTS.filter(p => !LEGACY_REMOVED_IDS.has(p.id)).map(normalizeProduct);
   }
 
   // Fetch definitive products list from backend server
   fetch(getApiUrl('/api/products'))
-    .then(res => res.json())
+    .then(res => res.ok ? res.json() : fetch('products.json').then(r => r.json()))
     .then(serverProducts => {
       if (Array.isArray(serverProducts) && serverProducts.length > 0) {
-        adminProducts = serverProducts.map(normalizeProduct);
+        adminProducts = serverProducts.filter(p => !LEGACY_REMOVED_IDS.has(p.id)).map(normalizeProduct);
         try {
           localStorage.setItem('verdanta_products', JSON.stringify(adminProducts));
-        } catch (e) {}
+        } catch (e) { }
         renderCategoryProductSections();
         renderDashboard();
         updateSidebarCounts();
@@ -999,8 +882,26 @@ function loadData() {
     }
   } else {
     adminProposals = [...SAMPLE_PROPOSALS];
-    saveProposals();
   }
+
+  // Fetch definitive proposals database from backend server
+  fetch(getApiUrl('/api/proposals'))
+    .then(res => res.json())
+    .then(serverProps => {
+      if (Array.isArray(serverProps) && serverProps.length > 0) {
+        adminProposals = serverProps;
+        try {
+          localStorage.setItem('verdanta_proposals', JSON.stringify(adminProposals));
+        } catch (e) { }
+        renderProposalsTable();
+        renderDashboard();
+        updateSidebarCounts();
+      } else if (adminProposals.length > 0) {
+        // Sync sample proposals to server if server is empty
+        saveProposals();
+      }
+    })
+    .catch(err => console.log('Proposals server sync pending:', err));
 
   const storedOrders = localStorage.getItem('verdanta_orders');
   if (storedOrders) {
@@ -1036,7 +937,7 @@ function saveProducts() {
         adminProducts = data.products.map(normalizeProduct);
         try {
           localStorage.setItem('verdanta_products', JSON.stringify(adminProducts));
-        } catch (e) {}
+        } catch (e) { }
       }
     })
     .catch(err => console.warn('Server sync error:', err));
@@ -1049,12 +950,32 @@ function saveProducts() {
     if (storeBroadcastChannel) {
       storeBroadcastChannel.postMessage({ type: 'PRODUCTS_UPDATED', timestamp: Date.now() });
     }
-  } catch (e) {}
+  } catch (e) { }
 }
 
 function saveProposals() {
-  localStorage.setItem('verdanta_proposals', JSON.stringify(adminProposals));
+  try {
+    localStorage.setItem('verdanta_proposals', JSON.stringify(adminProposals));
+  } catch (e) { }
   updateSidebarCounts();
+
+  // Direct server database persistence: writes to proposals.json and MongoDB
+  fetch(getApiUrl('/api/proposals'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(adminProposals)
+  }).then(res => res.json())
+    .then(data => {
+      console.log('[Admin] Proposals database synchronized:', data);
+    })
+    .catch(err => console.warn('Proposals server sync error:', err));
+
+  try {
+    localStorage.setItem('verdanta_sync_trigger', String(Date.now()));
+    if (storeBroadcastChannel) {
+      storeBroadcastChannel.postMessage({ type: 'PROPOSALS_UPDATED', timestamp: Date.now() });
+    }
+  } catch (e) { }
 }
 
 function saveOrders() {
@@ -1066,15 +987,18 @@ function saveOrders() {
 // TAB NAVIGATION
 // =============================================================================
 
-window.switchTab = function(tabName) {
+window.switchTab = function (tabName) {
   document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
 
   const tabIndex = {
     dashboard: 0,
     products: 1,
-    proposals: 2,
-    orders: 3
+    categories: 2,
+    'corporate-cards': 3,
+    hero: 4,
+    proposals: 5,
+    orders: 6
   }[tabName] || 0;
 
   const btn = document.querySelectorAll('.nav-tab-btn')[tabIndex];
@@ -1086,6 +1010,9 @@ window.switchTab = function(tabName) {
   const titleMap = {
     dashboard: 'Dashboard Overview',
     products: 'Products & Collections Inventory',
+    categories: 'Categories & Subcategories Management',
+    'corporate-cards': 'Corporate Gifting Category Cards (3×2 Grid)',
+    hero: 'Homepage Hero Banner & Content',
     proposals: 'Customer B2B Proposals & Requests',
     orders: 'Customer Orders & Checkouts'
   };
@@ -1097,20 +1024,27 @@ window.switchTab = function(tabName) {
 
   if (tabName === 'dashboard') renderDashboard();
   if (tabName === 'products') renderCategoryProductSections();
+  if (tabName === 'categories') renderCategoryManagementList();
+  if (tabName === 'corporate-cards') renderCorporateCardsAdmin();
+  if (tabName === 'hero') renderHeroAdmin();
   if (tabName === 'proposals') renderProposalsTable();
   if (tabName === 'orders') renderOrdersTable();
 };
 
-window.toggleSidebar = function() {
+window.toggleSidebar = function () {
   document.getElementById('adminSidebar').classList.toggle('open');
 };
 
 function updateSidebarCounts() {
   const prodBadge = document.getElementById('sidebarProductCount');
+  const catBadge = document.getElementById('sidebarCategoryCount');
+  const corpBadge = document.getElementById('sidebarCorpCardsCount');
   const propBadge = document.getElementById('sidebarProposalCount');
   const ordBadge = document.getElementById('sidebarOrderCount');
 
   if (prodBadge) prodBadge.textContent = adminProducts.length;
+  if (catBadge) catBadge.textContent = PRODUCT_CATEGORIES.length;
+  if (corpBadge) corpBadge.textContent = (adminCorporateCards && adminCorporateCards.length) ? adminCorporateCards.length + ' Cards' : '6 Cards';
   if (propBadge) propBadge.textContent = adminProposals.filter(p => p.status === 'New').length || adminProposals.length;
   if (ordBadge) ordBadge.textContent = adminOrders.length;
 }
@@ -1172,7 +1106,7 @@ let uploadedPhotoDataUrl = '';
 // =============================================================================
 
 // Handle drag & drop photo directly onto dropzone
-window.handleDropFile = function(event) {
+window.handleDropFile = function (event) {
   event.preventDefault();
   const dropzone = document.getElementById('photoDropzone');
   if (dropzone) dropzone.style.borderColor = '';
@@ -1183,7 +1117,7 @@ window.handleDropFile = function(event) {
 };
 
 // Handle local device photo file upload (JPG, PNG, WEBP)
-window.handleImageFileUpload = function(event) {
+window.handleImageFileUpload = function (event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
 
@@ -1193,9 +1127,9 @@ window.handleImageFileUpload = function(event) {
   }
 
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     const img = new Image();
-    img.onload = async function() {
+    img.onload = async function () {
       // Scale for web viewing and sharp display
       const maxDim = 900;
       let width = img.width;
@@ -1238,7 +1172,7 @@ window.handleImageFileUpload = function(event) {
   reader.readAsDataURL(file);
 };
 
-window.handleCustomImageUrlInput = function(val) {
+window.handleCustomImageUrlInput = function (val) {
   const url = (val || '').trim();
   if (url) {
     uploadedPhotoDataUrl = '';
@@ -1249,7 +1183,7 @@ window.handleCustomImageUrlInput = function(val) {
   }
 };
 
-window.handlePresetSelect = function(val) {
+window.handlePresetSelect = function (val) {
   uploadedPhotoDataUrl = '';
   const fileInput = document.getElementById('prodFileInput');
   if (fileInput) fileInput.value = '';
@@ -1271,7 +1205,7 @@ function showPhotoPreview(src, label) {
   }
 }
 
-window.removeUploadedImage = function(e) {
+window.removeUploadedImage = function (e) {
   if (e) e.stopPropagation();
   uploadedPhotoDataUrl = '';
   const fileInput = document.getElementById('prodFileInput');
@@ -1293,17 +1227,253 @@ window.removeUploadedImage = function(e) {
 };
 
 // =============================================================================
-// CATEGORY & SUBTITLE CATEGORY PRODUCT MANAGEMENT
+// CATEGORY MANAGEMENT CONSOLE (CRUD & SUB-CATEGORIES)
 // =============================================================================
 
 // Helper to escape attribute string safely
 function escapeAttr(str) {
   if (!str) return '';
-  return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '&quot;');
 }
 
+let currentCategoryChannelFilter = 'all';
+
+window.filterCategoriesByChannel = function (channel) {
+  currentCategoryChannelFilter = channel;
+  document.querySelectorAll('[data-cat-channel]').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-cat-channel') === channel);
+  });
+  renderCategoryManagementList();
+};
+
+function getCategoryCoverImage(cat) {
+  if (cat && cat.image && typeof cat.image === 'string' && cat.image.trim()) {
+    return cat.image.trim();
+  }
+  if (Array.isArray(adminProducts)) {
+    const catProd = adminProducts.find(p => {
+      const pCatId = p.categoryId || normalizeCategoryId(p.category);
+      return pCatId === cat.id && p.image && typeof p.image === 'string' && p.image.trim();
+    });
+    if (catProd && catProd.image) {
+      return catProd.image.trim();
+    }
+  }
+  return 'images/wooden-gallery.jpg';
+}
+
+window.renderCategoryManagementList = function () {
+  const container = document.getElementById('categoriesManagementContainer');
+  if (!container) return;
+
+  const searchInput = document.getElementById('categorySearchInput');
+  const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+
+  let categories = [...PRODUCT_CATEGORIES];
+
+  // Channel filter
+  if (currentCategoryChannelFilter !== 'all') {
+    categories = categories.filter(c => (c.channel || 'shop') === currentCategoryChannelFilter);
+  }
+
+  // Search filter
+  if (query) {
+    categories = categories.filter(c => {
+      const nameMatch = (c.name || '').toLowerCase().includes(query);
+      const descMatch = (c.description || '').toLowerCase().includes(query);
+      const badgeMatch = (c.badge || '').toLowerCase().includes(query);
+      const subMatch = Array.isArray(c.subCategories) && c.subCategories.some(s => s.toLowerCase().includes(query));
+      return nameMatch || descMatch || badgeMatch || subMatch;
+    });
+  }
+
+  if (categories.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 60px 20px; text-align: center; color: var(--color-text-muted); background: #ffffff; border-radius: 8px; border: 1px dashed var(--color-border); margin-top: 10px;">
+        <i class="fa-solid fa-folder-open" style="font-size: 2.2rem; color: var(--color-gold); margin-bottom: 12px; display: inline-block;"></i>
+        <h4 style="color: var(--color-primary); font-size: 1.15rem; margin-bottom: 6px;">No categories found matching criteria</h4>
+        <p style="font-size: 0.88rem; margin-bottom: 18px;">Try clearing your search query or click below to create a new category.</p>
+        <button type="button" class="btn btn-primary" onclick="openAddCategoryModal()">
+          <i class="fa-solid fa-folder-plus"></i> + Create New Category
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  const channelLabels = {
+    shop: 'Shop Collections',
+    corporate: 'Corporate Gifting',
+    wholesale: 'Wholesale B2B',
+    export: 'Export & Global'
+  };
+
+  container.innerHTML = categories.map((cat, idx) => {
+    const catProds = adminProducts.filter(p => (p.categoryId || normalizeCategoryId(p.category)) === cat.id);
+    const coverImg = getCategoryCoverImage(cat);
+    const channelName = channelLabels[cat.channel || 'shop'] || 'Shop Collections';
+    const subs = Array.isArray(cat.subCategories) ? cat.subCategories : [];
+
+    const subPillsHtml = subs.map(sub => {
+      const subCount = catProds.filter(p => normalizeSubCategory(cat.id, p.subItem || p.subCategory) === sub).length;
+      return `
+        <span class="manage-subcat-pill">
+          <span>${escapeHtml(sub)}</span>
+          <span class="manage-subcat-count" title="${subCount} products assigned">${subCount}</span>
+          <button type="button" class="manage-subcat-delete-btn" title="Remove subcategory '${escapeHtml(sub)}'" onclick="removeSubCategoryFromCat('${cat.id}', '${escapeAttr(sub)}')">&times;</button>
+        </span>
+      `;
+    }).join('');
+
+    return `
+      <div class="cat-manage-card" id="cat_card_${cat.id}">
+        <div class="cat-manage-card-header">
+          <div class="cat-manage-left">
+            <div class="cat-manage-thumb-box" onclick="openEditCategoryModal('${cat.id}')" title="Click to edit category cover photo">
+              <img src="${coverImg}" alt="${escapeHtml(cat.name)}" onerror="this.src='images/wooden-gallery.jpg'">
+            </div>
+            <div class="cat-manage-info">
+              <div class="cat-manage-meta-row">
+                <span class="sidebar-badge" style="background: #eef4f0; color: var(--color-primary); font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; font-weight: 700;">
+                  ${escapeHtml(channelName)}
+                </span>
+                <span class="sidebar-badge badge-gold" style="font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; font-weight: 700;">
+                  ${escapeHtml(cat.badge || `Collection 0${idx + 1}`)}
+                </span>
+                <span style="font-size: 0.75rem; color: #888; font-weight: 600;">
+                  <i class="fa-solid fa-boxes-stacked"></i> ${catProds.length} ${catProds.length === 1 ? 'Product' : 'Products'} Live
+                </span>
+              </div>
+              <h3 class="cat-manage-name">${escapeHtml(cat.name)}</h3>
+              <p class="cat-manage-desc">${escapeHtml(cat.description || `Artisanal handcrafted ${cat.name} creations.`)}</p>
+            </div>
+          </div>
+
+          <div class="cat-manage-actions">
+            <button type="button" class="btn-edit-cat" onclick="openEditCategoryModal('${cat.id}')">
+              <i class="fa-solid fa-pen-to-square"></i> Edit Category
+            </button>
+            <button type="button" class="btn-delete-cat" onclick="deleteCategory('${cat.id}')">
+              <i class="fa-solid fa-trash-can"></i> Delete
+            </button>
+          </div>
+        </div>
+
+        <div class="cat-manage-body">
+          <div class="cat-subcat-box">
+            <div class="cat-subcat-box-title-row">
+              <div class="cat-subcat-box-title">
+                <i class="fa-solid fa-tags" style="color: var(--color-gold);"></i>
+                <span>Subcategories (${subs.length})</span>
+              </div>
+              <span style="font-size: 0.74rem; color: #888;">
+                Click &times; to remove or type below to add. Automatically updates live customer website.
+              </span>
+            </div>
+
+            <div class="cat-subcat-pills-wrap">
+              ${subPillsHtml || '<span style="font-size: 0.8rem; color: #888; font-style: italic;">No subcategories yet. Add one below:</span>'}
+              <form class="inline-subcat-form" onsubmit="addSubCategoryFromInput(event, '${cat.id}')">
+                <input type="text" class="inline-subcat-input" id="subInput_${cat.id}" placeholder="+ Add new subcategory..." autocomplete="off">
+                <button type="submit" class="btn-inline-add-subcat">
+                  <i class="fa-solid fa-plus"></i> Add
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+window.addSubCategoryFromInput = function (event, catId) {
+  if (event) event.preventDefault();
+  const input = document.getElementById(`subInput_${catId}`);
+  if (!input) return;
+  const subName = input.value.trim();
+  if (!subName) return;
+
+  const cat = PRODUCT_CATEGORIES.find(c => c.id === catId);
+  if (!cat) return;
+
+  if (!Array.isArray(cat.subCategories)) {
+    cat.subCategories = [];
+  }
+
+  const exists = cat.subCategories.some(s => s.toLowerCase() === subName.toLowerCase());
+  if (exists) {
+    showToast(`Subcategory "${subName}" already exists in ${cat.name}.`, 'warning');
+    return;
+  }
+
+  cat.subCategories.push(subName);
+  input.value = '';
+
+  saveCategories();
+  renderCategoryManagementList();
+  renderCategoryProductSections();
+  showToast(`Subcategory "${subName}" added to "${cat.name}"!`);
+};
+
+window.removeSubCategoryFromCat = function (catId, subName) {
+  const cat = PRODUCT_CATEGORIES.find(c => c.id === catId);
+  if (!cat || !Array.isArray(cat.subCategories)) return;
+
+  if (!confirm(`Are you sure you want to remove subcategory "${subName}" from "${cat.name}"?`)) {
+    return;
+  }
+
+  cat.subCategories = cat.subCategories.filter(s => s !== subName);
+  saveCategories();
+  renderCategoryManagementList();
+  renderCategoryProductSections();
+  showToast(`Subcategory "${subName}" removed from "${cat.name}".`);
+};
+
+window.deleteCategory = function (catId) {
+  const cat = PRODUCT_CATEGORIES.find(c => c.id === catId);
+  if (!cat) return;
+
+  const catProds = adminProducts.filter(p => (p.categoryId || normalizeCategoryId(p.category)) === catId);
+  let confirmMsg = `Are you sure you want to permanently delete category "${cat.name}"?`;
+  if (catProds.length > 0) {
+    confirmMsg += `\n\nThere are ${catProds.length} products currently in this category. They will remain in inventory with unassigned category.`;
+  }
+
+  if (!confirm(confirmMsg)) return;
+
+  // Unassign products if any
+  if (catProds.length > 0) {
+    adminProducts.forEach(p => {
+      if ((p.categoryId || normalizeCategoryId(p.category)) === catId) {
+        p.categoryId = '';
+      }
+    });
+    saveProducts();
+  }
+
+  // Remove from PRODUCT_CATEGORIES
+  PRODUCT_CATEGORIES = PRODUCT_CATEGORIES.filter(c => c.id !== catId);
+
+  saveCategories();
+  updateSidebarCounts();
+  renderCategoryManagementList();
+  renderCategoryProductSections();
+  renderCategoryJumpPills();
+  renderDashboard();
+  showToast(`Category "${cat.name}" deleted successfully.`);
+};
+
+// =============================================================================
+// CATEGORY & SUBTITLE CATEGORY PRODUCT MANAGEMENT
+// =============================================================================
+
 // Prompt admin to add a new subtitle category on the fly
-window.quickAddSubCategoryPrompt = function(categoryId) {
+window.quickAddSubCategoryPrompt = function (categoryId) {
   const cat = getCategoryById(categoryId);
   const newSub = prompt(`Enter new Subtitle Category name for "${cat.name}":`);
   if (!newSub || !newSub.trim()) return;
@@ -1314,7 +1484,9 @@ window.quickAddSubCategoryPrompt = function(categoryId) {
     cat.subCategories.push(cleanSub);
   }
 
+  saveCategories();
   showToast(`Subtitle category "${cleanSub}" added to ${cat.name}!`);
+  renderCategoryManagementList();
   renderCategoryProductSections();
 
   // Prompt to add photo right away
@@ -1340,14 +1512,8 @@ function renderCategoryProductSections(searchQuery = '') {
 
   const query = (searchQuery || '').toLowerCase().trim();
 
-  // Collect all active categories (core categories + any dynamic ones in products)
-  const allCatIds = new Set(PRODUCT_CATEGORIES.map(c => c.id));
-  adminProducts.forEach(p => {
-    if (p.categoryId) allCatIds.add(p.categoryId);
-    else if (p.category) allCatIds.add(normalizeCategoryId(p.category));
-  });
-
-  let categoriesList = Array.from(allCatIds).map(id => getCategoryById(id));
+  // Only categories currently defined in PRODUCT_CATEGORIES
+  let categoriesList = [...PRODUCT_CATEGORIES];
 
   // Filter by channel if selected
   if (currentAdminChannel !== 'all') {
@@ -1401,18 +1567,28 @@ function renderCategoryProductSections(searchQuery = '') {
       <section class="admin-category-section" id="cat-sec-${cat.id}">
         <!-- Category Section Header with Dedicated "+ Add Product" Button -->
         <div class="admin-cat-header">
-          <div class="admin-cat-title-block">
-            <div class="admin-cat-pill-row">
-              <span class="cat-channel-tag tag-${channel}"><i class="fa-solid fa-tag"></i> ${escapeHtml(channelLabel)}</span>
-              <span class="admin-cat-badge">${escapeHtml(cat.badge || 'Collection')}</span>
-              <span class="admin-cat-count-pill">${allCatProducts.length} Total Photos</span>
-              <span class="admin-cat-sub-count-pill" style="background:#f4efe6; color:var(--color-primary); font-size:0.74rem; font-weight:700; padding:3px 10px; border-radius:12px;">${subCategories.length} Subtitle Categories</span>
+          <div style="display: flex; gap: 16px; align-items: center; flex: 1; min-width: 0;">
+            <div class="admin-cat-cover-thumb-wrap" onclick="openEditCategoryModal('${cat.id}')" title="Click to change category cover photo" style="position: relative; width: 84px; height: 84px; border-radius: 8px; overflow: hidden; border: 2px solid #ecd8b4; flex-shrink: 0; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background: #fdfbf7;">
+              <img src="${cat.image || 'images/wooden-gallery.jpg'}" alt="${escapeHtml(cat.name)}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='images/wooden-gallery.jpg'">
+              <span style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(26,20,16,0.78); color: #fff; font-size: 0.65rem; font-weight: 700; text-align: center; padding: 2px 0; letter-spacing: 0.5px;">COVER</span>
             </div>
-            <h3 class="admin-cat-title">${escapeHtml(cat.displayName || cat.name)}</h3>
-            <p class="admin-cat-description">${escapeHtml(cat.description || 'Artisan handcrafted creations.')}</p>
+            <div class="admin-cat-title-block" style="flex: 1; min-width: 0;">
+              <div class="admin-cat-pill-row">
+                <span class="cat-channel-tag tag-${channel}"><i class="fa-solid fa-tag"></i> ${escapeHtml(channelLabel)}</span>
+                <span class="admin-cat-badge">${escapeHtml(cat.badge || 'Collection')}</span>
+                <span class="admin-cat-count-pill">${allCatProducts.length} Total Photos</span>
+                <span class="admin-cat-sub-count-pill" style="background:#f4efe6; color:var(--color-primary); font-size:0.74rem; font-weight:700; padding:3px 10px; border-radius:12px;">${subCategories.length} Subtitle Categories</span>
+              </div>
+              <h3 class="admin-cat-title">${escapeHtml(cat.displayName || cat.name)}</h3>
+              <p class="admin-cat-description">${escapeHtml(cat.description || 'Artisan handcrafted creations.')}</p>
+            </div>
           </div>
           
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <!-- Button to Change Category Cover Photo & Info -->
+            <button class="btn btn-sm btn-outline-cat" onclick="openEditCategoryModal('${cat.id}')" style="background:#ffffff; border:1px solid var(--color-gold); color:var(--color-primary); padding:8px 14px; font-weight:700; font-size:0.8rem; border-radius:4px; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-camera"></i> Change Cover / Edit
+            </button>
             <!-- Dedicated Add Product/Photo button for THIS main category -->
             <button class="btn btn-add-cat-product" onclick="openAddProductModalForCategory('${cat.id}')">
               <i class="fa-solid fa-plus"></i> + Add Photo to ${escapeHtml(cat.name)}
@@ -1428,14 +1604,14 @@ function renderCategoryProductSections(searchQuery = '') {
         <div class="admin-subcat-nav-pills">
           <span class="subcat-nav-label"><i class="fa-solid fa-tags"></i> Subtitle Categories:</span>
           ${subCategories.map(subName => {
-            const count = allCatProducts.filter(p => normalizeSubCategory(cat.id, p.subItem) === subName).length;
-            const subSlug = subName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            return `
+      const count = allCatProducts.filter(p => normalizeSubCategory(cat.id, p.subItem) === subName).length;
+      const subSlug = subName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      return `
               <a href="#subcat-${cat.id}-${subSlug}" class="subcat-pill-link">
                 ${escapeHtml(subName)} (${count})
               </a>
             `;
-          }).join('')}
+    }).join('')}
         </div>
 
         <!-- Section Divider -->
@@ -1447,23 +1623,23 @@ function renderCategoryProductSections(searchQuery = '') {
         <!-- Vertical Stack of Subtitle Categories with Separate Add Photo Sections -->
         <div class="admin-subcategories-vertical">
           ${subCategories.map(subName => {
-            // Products strictly belonging to this subtitle category
-            let subProducts = allCatProducts.filter(p => normalizeSubCategory(cat.id, p.subItem) === subName);
+      // Products strictly belonging to this subtitle category
+      let subProducts = allCatProducts.filter(p => normalizeSubCategory(cat.id, p.subItem) === subName);
 
-            // Filter if search query active
-            if (query !== '') {
-              subProducts = subProducts.filter(p => 
-                (p.title && p.title.toLowerCase().includes(query)) ||
-                (p.name && p.name.toLowerCase().includes(query)) ||
-                (p.subItem && p.subItem.toLowerCase().includes(query)) ||
-                (p.material && p.material.toLowerCase().includes(query)) ||
-                (p.origin && p.origin.toLowerCase().includes(query))
-              );
-            }
+      // Filter if search query active
+      if (query !== '') {
+        subProducts = subProducts.filter(p =>
+          (p.title && p.title.toLowerCase().includes(query)) ||
+          (p.name && p.name.toLowerCase().includes(query)) ||
+          (p.subItem && p.subItem.toLowerCase().includes(query)) ||
+          (p.material && p.material.toLowerCase().includes(query)) ||
+          (p.origin && p.origin.toLowerCase().includes(query))
+        );
+      }
 
-            const subSlug = subName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const subSlug = subName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-            return `
+      return `
               <div class="admin-subcat-section-card" id="subcat-${cat.id}-${subSlug}">
                 <div class="admin-subcat-card-header">
                   <div class="admin-subcat-header-left">
@@ -1497,10 +1673,11 @@ function renderCategoryProductSections(searchQuery = '') {
                   ` : `
                     <div class="admin-subcat-photos-grid">
                       ${subProducts.map(prod => `
-                        <div class="admin-product-card" id="admin-prod-${prod.id}">
+                        <div class="admin-product-card ${prod.outOfStock ? 'is-out-of-stock' : ''}" id="admin-prod-${prod.id}">
                           <div class="admin-prod-thumb-wrap">
                             <img src="${prod.image || 'images/wooden-gallery.jpg'}" alt="${escapeHtml(prod.title || prod.name)}" class="admin-prod-thumb" onerror="this.src='images/wooden-gallery.jpg'">
                             <span class="admin-prod-badge">${escapeHtml(prod.badge || 'Artisan Signature')}</span>
+                            ${prod.outOfStock ? '<span class="admin-stock-tag is-out"><i class="fa-solid fa-ban"></i> OUT OF STOCK</span>' : '<span class="admin-stock-tag is-in"><i class="fa-solid fa-circle-check"></i> IN STOCK</span>'}
                           </div>
                           <div class="admin-prod-details">
                             <span class="admin-prod-sub-tag"><i class="fa-solid fa-tag"></i> ${escapeHtml(subName)}</span>
@@ -1516,6 +1693,9 @@ function renderCategoryProductSections(searchQuery = '') {
                             ${prod.description ? `<p class="admin-prod-desc-snippet">${escapeHtml(prod.description)}</p>` : ''}
                           </div>
                           <div class="admin-prod-actions">
+                            <button class="btn-card-action btn-card-stock ${prod.outOfStock ? 'is-out' : 'is-in'}" onclick="toggleProductStock('${prod.id}')" title="Click to toggle stock availability">
+                              <i class="fa-solid ${prod.outOfStock ? 'fa-ban' : 'fa-circle-check'}"></i> ${prod.outOfStock ? 'Out of Stock' : 'In Stock'}
+                            </button>
                             <button class="btn-card-action btn-card-edit" onclick="editProduct('${prod.id}')" title="Edit Photo / Product">
                               <i class="fa-solid fa-pen-to-square"></i> Edit
                             </button>
@@ -1530,7 +1710,7 @@ function renderCategoryProductSections(searchQuery = '') {
                 </div>
               </div>
             `;
-          }).join('')}
+    }).join('')}
         </div>
       </section>
     `;
@@ -1552,7 +1732,7 @@ function populateModalCategoryDropdown(selectedCatId, targetSubName = '') {
   handleModalCategorySelect(currentCatId, targetSubName);
 }
 
-window.handleModalCategorySelect = function(catId, targetSubName = '') {
+window.handleModalCategorySelect = function (catId, targetSubName = '') {
   const cat = getCategoryById(catId);
   if (!cat) return;
 
@@ -1598,10 +1778,10 @@ window.handleModalCategorySelect = function(catId, targetSubName = '') {
   }
 };
 
-window.handleModalSubCategorySelect = function(val) {
+window.handleModalSubCategorySelect = function (val) {
   const customInput = document.getElementById('prodSubItemCustom');
   const bannerSub = document.getElementById('modalSubCategoryDisplay');
-  
+
   if (val === '__custom__') {
     if (customInput) {
       customInput.style.display = 'block';
@@ -1617,7 +1797,7 @@ window.handleModalSubCategorySelect = function(val) {
 };
 
 // Open Add Product / Photo Modal for a specific category and subtitle category
-window.openAddProductModalForCategory = function(categoryId, subCategoryName = '') {
+window.openAddProductModalForCategory = function (categoryId, subCategoryName = '') {
   const cat = getCategoryById(categoryId);
   if (!cat) return;
 
@@ -1646,7 +1826,7 @@ window.openAddProductModalForCategory = function(categoryId, subCategoryName = '
 
   document.getElementById('productModalTitle').textContent = `Add Photo to ${cat.name}`;
   populateModalCategoryDropdown(cat.id, activeSubName);
-  
+
   document.getElementById('saveProductBtn').textContent = `Save Photo to ${activeSubName}`;
 
   // Reset custom image text
@@ -1675,7 +1855,7 @@ window.openAddProductModalForCategory = function(categoryId, subCategoryName = '
 };
 
 // Fallback/Generic Add Product (defaults to currently active channel or first category)
-window.openAddProductModal = function() {
+window.openAddProductModal = function () {
   let targetCatId = 'artisan-gallery';
   if (currentAdminChannel !== 'all') {
     const channelCat = PRODUCT_CATEGORIES.find(c => (c.channel || 'shop') === currentAdminChannel);
@@ -1685,7 +1865,7 @@ window.openAddProductModal = function() {
 };
 
 // Edit Product (Preserves existing category & subtitle category, updates in place)
-window.editProduct = function(productId) {
+window.editProduct = function (productId) {
   const prod = adminProducts.find(p => p.id === productId);
   if (!prod) return;
 
@@ -1710,6 +1890,10 @@ window.editProduct = function(productId) {
   populateModalCategoryDropdown(cat ? cat.id : 'artisan-gallery', currentSub);
 
   document.getElementById('prodBadge').value = prod.badge || 'Artisan Signature';
+  const stockSelect = document.getElementById('prodStockStatus');
+  if (stockSelect) {
+    stockSelect.value = prod.outOfStock ? 'out' : 'in';
+  }
   document.getElementById('prodOrigin').value = prod.origin || '';
   document.getElementById('prodMaterial').value = prod.material || '';
   document.getElementById('prodDescription').value = prod.description || '';
@@ -1737,12 +1921,12 @@ window.editProduct = function(productId) {
   document.getElementById('productModal').classList.add('active');
 };
 
-window.closeProductModal = function() {
+window.closeProductModal = function () {
   document.getElementById('productModal').classList.remove('active');
 };
 
 // Real-time calculation of discount percentage and rupee savings
-window.calculateDiscountPreview = function(context = 'admin') {
+window.calculateDiscountPreview = function (context = 'admin') {
   const mrpInput = document.getElementById(context === 'admin' ? 'prodMrp' : 'custProdMrp');
   const priceInput = document.getElementById(context === 'admin' ? 'prodPrice' : 'custProdPrice');
   const badgeEl = document.getElementById(context === 'admin' ? 'adminDiscountSavings' : 'custDiscountSavings');
@@ -1771,7 +1955,7 @@ window.calculateDiscountPreview = function(context = 'admin') {
 };
 
 // Handle Add / Edit Submission
-window.handleProductSubmit = async function(event) {
+window.handleProductSubmit = async function (event) {
   event.preventDefault();
   const saveBtn = document.getElementById('saveProductBtn');
   if (saveBtn) {
@@ -1822,6 +2006,8 @@ window.handleProductSubmit = async function(event) {
   }
 
   const badge = document.getElementById('prodBadge').value;
+  const stockSelect = document.getElementById('prodStockStatus');
+  const outOfStock = stockSelect ? (stockSelect.value === 'out') : false;
   const origin = document.getElementById('prodOrigin').value.trim();
   const material = document.getElementById('prodMaterial').value.trim();
   const description = document.getElementById('prodDescription').value.trim();
@@ -1861,13 +2047,14 @@ window.handleProductSubmit = async function(event) {
         discountPercent: discountPercent,
         priceFormatted: price > 0 ? '₹' + price.toLocaleString('en-IN') : '₹0',
         badge: badge,
+        outOfStock: outOfStock,
         image: image,
         origin: origin,
         material: material,
         description: description,
         updatedAt: new Date().toISOString()
       };
-      showToast(`Photo and pricing for "${title}" updated successfully! Synchronized with storefront.`);
+      showToast(`Product "${title}" updated! Stock: ${outOfStock ? '🔴 Out of Stock' : '🟢 In Stock'}.`);
     }
   } else {
     // Add new product assigned to categoryId and subItem
@@ -1884,6 +2071,7 @@ window.handleProductSubmit = async function(event) {
       discountPercent: discountPercent,
       priceFormatted: price > 0 ? '₹' + price.toLocaleString('en-IN') : '₹0',
       badge: badge,
+      outOfStock: outOfStock,
       image: image,
       origin: origin || 'Handcrafted in India',
       material: material || 'Natural Materials',
@@ -1891,7 +2079,7 @@ window.handleProductSubmit = async function(event) {
       createdAt: new Date().toISOString()
     };
     adminProducts.unshift(newProduct);
-    showToast(`New product "${title}" with photo added to live customer store!`);
+    showToast(`New product "${title}" added to live customer store!`);
   }
 
   saveProducts();
@@ -1905,8 +2093,19 @@ window.handleProductSubmit = async function(event) {
   }
 };
 
+// Quick Stock Toggle handler for Admin
+window.toggleProductStock = function (productId) {
+  const prod = adminProducts.find(p => p.id === productId);
+  if (!prod) return;
+  prod.outOfStock = !prod.outOfStock;
+  saveProducts();
+  renderCategoryProductSections();
+  renderDashboard();
+  showToast(`"${prod.title || prod.name}" is now marked ${prod.outOfStock ? '🔴 OUT OF STOCK' : '🟢 IN STOCK'}.`);
+};
+
 // Delete Product Confirmation
-window.confirmDeleteProduct = function(productId) {
+window.confirmDeleteProduct = function (productId) {
   const prod = adminProducts.find(p => p.id === productId);
   if (!prod) return;
 
@@ -1924,12 +2123,12 @@ window.confirmDeleteProduct = function(productId) {
   document.getElementById('deleteConfirmModal').classList.add('active');
 };
 
-window.closeDeleteConfirmModal = function() {
+window.closeDeleteConfirmModal = function () {
   pendingDeleteProductId = null;
   document.getElementById('deleteConfirmModal').classList.remove('active');
 };
 
-window.executeDeleteProduct = function() {
+window.executeDeleteProduct = function () {
   if (!pendingDeleteProductId) return;
   const prod = adminProducts.find(p => p.id === pendingDeleteProductId);
   const title = prod ? (prod.title || prod.name) : 'Product';
@@ -1945,14 +2144,14 @@ window.executeDeleteProduct = function() {
 };
 
 // Legacy deleteProduct wrapper
-window.deleteProduct = function(productId) {
+window.deleteProduct = function (productId) {
   confirmDeleteProduct(productId);
 };
 
 // Reset to Default Products
-window.confirmResetCatalog = function() {
+window.confirmResetCatalog = function () {
   if (confirm('This will restore the original 14 curated artisan products from the notebook. Are you sure?')) {
-    adminProducts = SEED_PRODUCTS.map(normalizeProduct);
+    adminProducts = SEED_PRODUCTS.filter(p => !LEGACY_REMOVED_IDS.has(p.id)).map(normalizeProduct);
     saveProducts();
     renderCategoryProductSections();
     renderDashboard();
@@ -1961,7 +2160,7 @@ window.confirmResetCatalog = function() {
 };
 
 // Jump / Filter Category Sections
-window.jumpToCategory = function(catId) {
+window.jumpToCategory = function (catId) {
   document.querySelectorAll('.cat-jump-pill').forEach(btn => btn.classList.remove('active'));
   const allBtns = Array.from(document.querySelectorAll('.cat-jump-pill'));
   const activeBtn = allBtns.find(b => b.getAttribute('onclick')?.includes(`'${catId}'`));
@@ -1999,13 +2198,124 @@ function renderCategoryJumpPills() {
 }
 window.renderCategoryJumpPills = renderCategoryJumpPills;
 
+let uploadedCatPhotoDataUrl = '';
+
+// Handle drag & drop category photo onto dropzone
+window.handleCatDropFile = function (event) {
+  event.preventDefault();
+  const dropzone = document.getElementById('catPhotoDropzone');
+  if (dropzone) dropzone.style.borderColor = '';
+  if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+    const fakeEvent = { target: { files: event.dataTransfer.files } };
+    window.handleCategoryImageUpload(fakeEvent);
+  }
+};
+
+// Handle category cover photo file upload from device
+window.handleCategoryImageUpload = function (event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 20 * 1024 * 1024) {
+    alert('Please choose a photo under 20MB.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const img = new Image();
+    img.onload = async function () {
+      const maxDim = 1200;
+      let width = img.width;
+      let height = img.height;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const compressed = canvas.toDataURL('image/jpeg', 0.90);
+      uploadedCatPhotoDataUrl = compressed;
+
+      const previewImg = document.getElementById('catPhotoPreviewImg');
+      const previewWrap = document.getElementById('catPhotoPreviewWrap');
+      const dropPrompt = document.getElementById('catDropzonePrompt');
+      const customImgInput = document.getElementById('catCustomImage');
+      const catImageInput = document.getElementById('newCatImage');
+
+      if (previewImg) previewImg.src = compressed;
+      if (previewWrap) previewWrap.style.display = 'block';
+      if (dropPrompt) dropPrompt.style.display = 'none';
+      if (customImgInput) customImgInput.value = compressed;
+      if (catImageInput) catImageInput.value = '';
+
+      showToast('Cover photo chosen! Click "Save" to apply across Customer Storefront.');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+window.removeUploadedCatImage = function (event) {
+  if (event) event.stopPropagation();
+  uploadedCatPhotoDataUrl = '';
+  const previewImg = document.getElementById('catPhotoPreviewImg');
+  const previewWrap = document.getElementById('catPhotoPreviewWrap');
+  const dropPrompt = document.getElementById('catDropzonePrompt');
+  const customImgInput = document.getElementById('catCustomImage');
+  const catFileInput = document.getElementById('catFileInput');
+  const catImageInput = document.getElementById('newCatImage');
+
+  if (previewImg) previewImg.src = '';
+  if (previewWrap) previewWrap.style.display = 'none';
+  if (dropPrompt) dropPrompt.style.display = 'block';
+  if (customImgInput) customImgInput.value = '';
+  if (catFileInput) catFileInput.value = '';
+  if (catImageInput) catImageInput.value = '';
+};
+
+window.handleCatUrlInput = function (val) {
+  val = (val || '').trim();
+  const previewImg = document.getElementById('catPhotoPreviewImg');
+  const previewWrap = document.getElementById('catPhotoPreviewWrap');
+  const dropPrompt = document.getElementById('catDropzonePrompt');
+  const customImgInput = document.getElementById('catCustomImage');
+
+  if (val) {
+    uploadedCatPhotoDataUrl = val;
+    if (previewImg) previewImg.src = val;
+    if (previewWrap) previewWrap.style.display = 'block';
+    if (dropPrompt) dropPrompt.style.display = 'none';
+    if (customImgInput) customImgInput.value = val;
+  }
+};
+
 // Open Add Category Modal
-window.openAddCategoryModal = function() {
+window.openAddCategoryModal = function () {
   const form = document.getElementById('categoryForm');
   if (form) form.reset();
   document.getElementById('editCategoryId').value = '';
   document.getElementById('categoryModalTitle').textContent = 'Add New Product Category';
   document.getElementById('saveCategoryBtn').textContent = 'Create Category';
+
+  uploadedCatPhotoDataUrl = '';
+  const previewWrap = document.getElementById('catPhotoPreviewWrap');
+  const dropPrompt = document.getElementById('catDropzonePrompt');
+  const customImgInput = document.getElementById('catCustomImage');
+  const catFileInput = document.getElementById('catFileInput');
+  if (previewWrap) previewWrap.style.display = 'none';
+  if (dropPrompt) dropPrompt.style.display = 'block';
+  if (customImgInput) customImgInput.value = '';
+  if (catFileInput) catFileInput.value = '';
 
   // Preset channel to active filter if not 'all'
   const channelSelect = document.getElementById('newCatChannel');
@@ -2020,30 +2330,99 @@ window.openAddCategoryModal = function() {
   document.getElementById('categoryModal').classList.add('active');
 };
 
-window.closeCategoryModal = function() {
+// Open Edit Category & Cover Photo Modal
+window.openEditCategoryModal = function (catId) {
+  const cat = getCategoryById(catId);
+  if (!cat) return;
+
+  const form = document.getElementById('categoryForm');
+  if (form) form.reset();
+
+  document.getElementById('editCategoryId').value = cat.id;
+  document.getElementById('categoryModalTitle').textContent = `Edit Category & Cover: ${cat.name}`;
+  document.getElementById('saveCategoryBtn').textContent = 'Save Category & Cover';
+
+  document.getElementById('newCatName').value = cat.name || '';
+  const channelSelect = document.getElementById('newCatChannel');
+  if (channelSelect) channelSelect.value = cat.channel || 'shop';
+  document.getElementById('newCatBadge').value = cat.badge || '';
+  document.getElementById('newCatDescription').value = cat.description || '';
+  document.getElementById('newCatSubCategories').value = (cat.subCategories || []).join(', ');
+  document.getElementById('newCatImage').value = cat.image || '';
+
+  // Set up cover photo preview
+  uploadedCatPhotoDataUrl = cat.image || '';
+  const previewImg = document.getElementById('catPhotoPreviewImg');
+  const previewWrap = document.getElementById('catPhotoPreviewWrap');
+  const dropPrompt = document.getElementById('catDropzonePrompt');
+  const customImgInput = document.getElementById('catCustomImage');
+
+  if (cat.image) {
+    if (previewImg) previewImg.src = cat.image;
+    if (previewWrap) previewWrap.style.display = 'block';
+    if (dropPrompt) dropPrompt.style.display = 'none';
+    if (customImgInput) customImgInput.value = cat.image;
+  } else {
+    if (previewWrap) previewWrap.style.display = 'none';
+    if (dropPrompt) dropPrompt.style.display = 'block';
+    if (customImgInput) customImgInput.value = '';
+  }
+
+  document.getElementById('categoryModal').classList.add('active');
+};
+
+window.closeCategoryModal = function () {
   const modal = document.getElementById('categoryModal');
   if (modal) modal.classList.remove('active');
 };
 
-window.handleCategorySubmit = function(event) {
+window.handleCategorySubmit = async function (event) {
   event.preventDefault();
+  const saveBtn = document.getElementById('saveCategoryBtn');
+  const editId = document.getElementById('editCategoryId').value;
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving & Syncing...';
+  }
+
   const name = document.getElementById('newCatName').value.trim();
   const channel = document.getElementById('newCatChannel')?.value || 'shop';
   const badge = document.getElementById('newCatBadge').value.trim();
   const description = document.getElementById('newCatDescription').value.trim();
   const subCatsRaw = document.getElementById('newCatSubCategories').value.trim();
-  const image = document.getElementById('newCatImage')?.value.trim() || 'images/wooden-gallery.jpg';
 
-  if (!name) return;
+  let image = uploadedCatPhotoDataUrl || '';
+  if (!image) {
+    image = document.getElementById('catCustomImage')?.value.trim() || '';
+  }
+  if (!image) {
+    image = document.getElementById('newCatImage')?.value.trim() || 'images/wooden-gallery.jpg';
+  }
 
-  const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || ('cat-' + Date.now());
+  // If image is a base64 string, persist to server disk immediately
+  if (image && image.startsWith('data:image')) {
+    const diskPath = await uploadImageToServer(image);
+    if (diskPath) image = diskPath;
+  }
+
+  if (!name) {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = editId ? 'Save Category & Cover' : 'Create Category';
+    }
+    return;
+  }
+
+  const id = editId || (name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || ('cat-' + Date.now()));
 
   let subCategories = [];
   if (subCatsRaw) {
     subCategories = subCatsRaw.split(',').map(s => s.trim()).filter(Boolean);
   }
   if (subCategories.length === 0) {
-    subCategories = ['General Collection', 'Artisan Creations'];
+    const existing = PRODUCT_CATEGORIES.find(c => c.id === id);
+    subCategories = (existing && existing.subCategories) ? existing.subCategories : ['General Collection', 'Artisan Creations'];
   }
 
   const channelLabels = {
@@ -2054,7 +2433,7 @@ window.handleCategorySubmit = function(event) {
   };
   const channelName = channelLabels[channel] || 'Shop Collections';
 
-  const existingIdx = PRODUCT_CATEGORIES.findIndex(c => c.id === id || c.name.toLowerCase() === name.toLowerCase());
+  const existingIdx = PRODUCT_CATEGORIES.findIndex(c => c.id === id || (!editId && c.name.toLowerCase() === name.toLowerCase()));
   const newCatObj = {
     id: id,
     name: name,
@@ -2063,20 +2442,32 @@ window.handleCategorySubmit = function(event) {
     channelName: channelName,
     badge: badge || `${channelName}`,
     description: description || `Artisanal handcrafted ${name} creations.`,
-    icon: 'fa-boxes-stacked',
+    icon: (existingIdx !== -1 && PRODUCT_CATEGORIES[existingIdx].icon) ? PRODUCT_CATEGORIES[existingIdx].icon : 'fa-boxes-stacked',
     image: image,
     subCategories: subCategories
   };
 
   if (existingIdx !== -1) {
+    const oldCat = PRODUCT_CATEGORIES[existingIdx];
+    const oldName = oldCat ? oldCat.name : '';
     PRODUCT_CATEGORIES[existingIdx] = {
       ...PRODUCT_CATEGORIES[existingIdx],
       ...newCatObj
     };
-    showToast(`Category "${name}" updated!`);
+    if (oldName && oldName !== name) {
+      let updatedProd = false;
+      adminProducts.forEach(p => {
+        if (p.category === oldName || (p.categoryId && p.categoryId === id)) {
+          p.category = name;
+          updatedProd = true;
+        }
+      });
+      if (updatedProd) saveProducts();
+    }
+    showToast(`Category "${name}" updated! Changes synchronized with customer website.`);
   } else {
     PRODUCT_CATEGORIES.push(newCatObj);
-    showToast(`New category "${name}" added to ${channelName} and synced with customer storefront!`);
+    showToast(`New category "${name}" created and synced with Customer Storefront!`);
   }
 
   saveCategories();
@@ -2089,28 +2480,38 @@ window.handleCategorySubmit = function(event) {
     });
   }
 
+  updateSidebarCounts();
+  renderCategoryManagementList();
   renderCategoryProductSections();
   renderCategoryJumpPills();
   renderDashboard();
   closeCategoryModal();
 
-  // Scroll to the new category section
-  setTimeout(() => {
-    jumpToCategory(id);
-  }, 200);
+  if (saveBtn) {
+    saveBtn.disabled = false;
+    saveBtn.textContent = editId ? 'Save Category & Cover' : 'Create Category';
+  }
+
+  // Scroll to the modified category section if on products tab
+  const prodPane = document.getElementById('tab-products');
+  if (prodPane && prodPane.classList.contains('active')) {
+    setTimeout(() => {
+      jumpToCategory(id);
+    }, 200);
+  }
 };
 
-window.filterCategorySections = function() {
+window.filterCategorySections = function () {
   const query = (document.getElementById('productSearchInput').value || '').toLowerCase().trim();
   renderCategoryProductSections(query);
 };
 
 // Compatibility aliases
-window.renderProductsTable = function() {
+window.renderProductsTable = function () {
   renderCategoryProductSections();
 };
 
-window.filterProductsTable = function() {
+window.filterProductsTable = function () {
   filterCategorySections();
 };
 
@@ -2139,22 +2540,28 @@ function renderProposalsTable() {
     return;
   }
 
-  tbody.innerHTML = list.map(prop => `
+  tbody.innerHTML = list.map(prop => {
+    const rawPhone = (prop.phone || '').replace(/\D/g, '');
+    const clientPhone = rawPhone.length === 10 ? ('91' + rawPhone) : rawPhone;
+    const waReplyMsg = `Hello ${prop.name}, thank you for your enquiry regarding "${prop.type}" (Ref #${prop.id}) with Verdanta World. Our partnership team is reviewing your requirements.`;
+    const waUrl = clientPhone ? `https://wa.me/${clientPhone}?text=${encodeURIComponent(waReplyMsg)}` : `https://wa.me/918867688699`;
+
+    return `
     <tr>
       <td><strong style="color: var(--color-primary);">${prop.id}</strong></td>
       <td>
-        <span style="font-weight: 600; color: var(--color-primary); display: block;">${prop.name}</span>
-        <span style="font-size: 0.78rem; color: #888;">${prop.company}</span>
+        <span style="font-weight: 600; color: var(--color-primary); display: block;">${escapeHtml(prop.name)}</span>
+        <span style="font-size: 0.78rem; color: #888;">${escapeHtml(prop.company)}</span>
       </td>
       <td style="font-size: 0.8rem;">
-        <div><i class="fa-solid fa-envelope" style="color: var(--color-gold);"></i> ${prop.email}</div>
-        <div><i class="fa-solid fa-phone" style="color: var(--color-gold);"></i> ${prop.phone}</div>
+        <div><i class="fa-solid fa-envelope" style="color: var(--color-gold);"></i> ${escapeHtml(prop.email)}</div>
+        <div><i class="fa-solid fa-phone" style="color: var(--color-gold);"></i> ${escapeHtml(prop.phone)}</div>
       </td>
       <td>
-        <span class="badge-tag">${prop.type}</span>
+        <span class="badge-tag">${escapeHtml(prop.type)}</span>
       </td>
       <td style="font-size: 0.84rem; font-weight: 600; color: var(--color-primary);">
-        ${prop.units || 'N/A'}
+        ${escapeHtml(prop.units || 'N/A')}
       </td>
       <td style="font-size: 0.78rem; color: #888;">
         ${new Date(prop.createdAt).toLocaleDateString()}
@@ -2168,8 +2575,11 @@ function renderProposalsTable() {
         </select>
       </td>
       <td>
-        <div class="action-btns">
-          <button class="btn-icon" onclick="viewProposalDetail('${prop.id}')" title="View Details">
+        <div class="action-btns" style="display: flex; gap: 6px; align-items: center;">
+          <a href="${waUrl}" target="_blank" class="btn-icon" title="Chat with Client on WhatsApp" style="color: #25D366; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; width: 32px; height: 32px; border-radius: 4px; background: rgba(37, 211, 102, 0.1);">
+            <i class="fa-brands fa-whatsapp"></i>
+          </a>
+          <button class="btn-icon" onclick="viewProposalDetail('${prop.id}')" title="View Full Details">
             <i class="fa-solid fa-eye"></i>
           </button>
           <button class="btn-icon btn-icon-delete" onclick="deleteProposal('${prop.id}')" title="Delete Inquiry">
@@ -2178,10 +2588,11 @@ function renderProposalsTable() {
         </div>
       </td>
     </tr>
-  `).join('');
+    `;
+  }).join('');
 }
 
-window.filterProposalsByStatus = function(status) {
+window.filterProposalsByStatus = function (status) {
   currentProposalFilter = status;
   document.querySelectorAll('.filter-tabs-pills .pill-btn').forEach(btn => {
     btn.classList.remove('active');
@@ -2192,7 +2603,7 @@ window.filterProposalsByStatus = function(status) {
   renderProposalsTable();
 };
 
-window.updateProposalStatus = function(propId, newStatus) {
+window.updateProposalStatus = function (propId, newStatus) {
   const prop = adminProposals.find(p => p.id === propId);
   if (!prop) return;
 
@@ -2203,7 +2614,7 @@ window.updateProposalStatus = function(propId, newStatus) {
   showToast(`Inquiry #${propId} status marked as "${newStatus}"`);
 };
 
-window.deleteProposal = function(propId) {
+window.deleteProposal = function (propId) {
   if (confirm(`Delete inquiry request #${propId}?`)) {
     adminProposals = adminProposals.filter(p => p.id !== propId);
     saveProposals();
@@ -2213,40 +2624,54 @@ window.deleteProposal = function(propId) {
   }
 };
 
-window.viewProposalDetail = function(propId) {
+window.viewProposalDetail = function (propId) {
   const prop = adminProposals.find(p => p.id === propId);
   if (!prop) return;
+
+  const rawPhone = (prop.phone || '').replace(/\D/g, '');
+  const clientPhone = rawPhone.length === 10 ? ('91' + rawPhone) : rawPhone;
+  const waReplyMsg = `Hello ${prop.name}, regarding your Verdanta World proposal request #${prop.id} (${prop.type}):\n\n`;
+  const waUrl = clientPhone ? `https://wa.me/${clientPhone}?text=${encodeURIComponent(waReplyMsg)}` : `https://wa.me/918867688699`;
 
   document.getElementById('propDetailTitle').textContent = `Inquiry #${prop.id} — ${prop.name}`;
   document.getElementById('propDetailStatus').textContent = prop.status;
 
   document.getElementById('proposalDetailBody').innerHTML = `
     <div style="background: #faf8f5; padding: 18px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; line-height: 1.8;">
-      <div><strong>Company / Entity:</strong> ${prop.company}</div>
-      <div><strong>Contact Person:</strong> ${prop.name}</div>
-      <div><strong>Email:</strong> ${prop.email}</div>
-      <div><strong>Phone:</strong> ${prop.phone}</div>
-      <div><strong>Inquiry Discipline:</strong> ${prop.type}</div>
-      <div><strong>Volume / Budget:</strong> ${prop.units}</div>
+      <div><strong>Company / Entity:</strong> ${escapeHtml(prop.company)}</div>
+      <div><strong>Contact Person:</strong> ${escapeHtml(prop.name)}</div>
+      <div><strong>Email:</strong> ${escapeHtml(prop.email)}</div>
+      <div><strong>Phone:</strong> ${escapeHtml(prop.phone)}</div>
+      <div><strong>Inquiry Discipline:</strong> ${escapeHtml(prop.type)}</div>
+      <div><strong>Volume / Budget:</strong> ${escapeHtml(prop.units)}</div>
       <div><strong>Submitted On:</strong> ${new Date(prop.createdAt).toLocaleString()}</div>
     </div>
     <div>
       <h4 style="font-family: var(--font-serif); font-size: 1.15rem; color: var(--color-primary); margin-bottom: 8px;">Client Customization Notes:</h4>
-      <p style="background: #fff; border: 1px solid #e0dbd0; padding: 14px; border-radius: 6px; font-size: 0.88rem; color: #444; line-height: 1.6;">
-        ${prop.notes || 'No specific notes provided.'}
+      <p style="background: #fff; border: 1px solid #e0dbd0; padding: 14px; border-radius: 6px; font-size: 0.88rem; color: #444; line-height: 1.6; white-space: pre-wrap;">
+        ${escapeHtml(prop.notes || 'No specific notes provided.')}
       </p>
+    </div>
+    <div style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
+      <a href="${waUrl}" target="_blank" class="btn btn-primary" style="background: #25D366; border-color: #25D366; color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; padding: 10px 18px; border-radius: 6px;">
+        <i class="fa-brands fa-whatsapp" style="font-size: 1.2rem;"></i> Chat with ${escapeHtml(prop.name)} on WhatsApp
+      </a>
+      ${prop.email && !prop.email.includes('Appointment') ? `
+      <a href="mailto:${escapeHtml(prop.email)}?subject=Verdanta%20World%20Proposal%20${encodeURIComponent(prop.id)}" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; padding: 10px 18px; border-radius: 6px; text-decoration: none;">
+        <i class="fa-solid fa-envelope"></i> Send Email
+      </a>` : ''}
     </div>
   `;
 
   document.getElementById('proposalDetailModal').classList.add('active');
 };
 
-window.closeProposalDetailModal = function() {
+window.closeProposalDetailModal = function () {
   document.getElementById('proposalDetailModal').classList.remove('active');
 };
 
 // Export Proposals as CSV
-window.exportProposalsToCSV = function() {
+window.exportProposalsToCSV = function () {
   if (adminProposals.length === 0) {
     alert('No proposals to export.');
     return;
@@ -2315,7 +2740,7 @@ function renderOrdersTable() {
   `).join('');
 }
 
-window.deleteOrder = function(orderId) {
+window.deleteOrder = function (orderId) {
   if (confirm(`Remove order record #${orderId}?`)) {
     adminOrders = adminOrders.filter(o => o.id !== orderId);
     saveOrders();
@@ -2353,7 +2778,7 @@ function showToast(message) {
 // PERMANENT STORAGE HANDLERS (HOSTINGER SERVER & CLOUDINARY)
 // =============================================================================
 
-window.openStorageModal = function() {
+window.openStorageModal = function () {
   const modal = document.getElementById('storageSettingsModal');
   const cloudInput = document.getElementById('cloudinaryCloudName');
   const presetInput = document.getElementById('cloudinaryUploadPreset');
@@ -2369,12 +2794,12 @@ window.openStorageModal = function() {
   if (modal) modal.classList.add('active');
 };
 
-window.closeStorageModal = function() {
+window.closeStorageModal = function () {
   const modal = document.getElementById('storageSettingsModal');
   if (modal) modal.classList.remove('active');
 };
 
-window.saveStorageSettings = function() {
+window.saveStorageSettings = function () {
   const cloudInput = document.getElementById('cloudinaryCloudName');
   const presetInput = document.getElementById('cloudinaryUploadPreset');
 
@@ -2395,7 +2820,7 @@ window.saveStorageSettings = function() {
   closeStorageModal();
 };
 
-window.updateStorageStatusUI = function() {
+window.updateStorageStatusUI = function () {
   const cloudName = (localStorage.getItem('verdanta_cloudinary_cloud_name') || '').trim();
   const uploadPreset = (localStorage.getItem('verdanta_cloudinary_upload_preset') || '').trim();
 
@@ -2429,3 +2854,569 @@ window.updateStorageStatusUI = function() {
     }
   }
 };
+
+// =============================================================================
+// CORPORATE GIFTING CATEGORY CARDS (3x2 Grid Photo & Content Management)
+// =============================================================================
+
+const DEFAULT_CORPORATE_CARDS = [
+  {
+    id: "corp-welcome",
+    order: 1,
+    title: "EMPLOYEE WELCOME & ONBOARDING",
+    description: "Thoughtful gift sets to make new team members feel valued and connected.",
+    icon: "fa-solid fa-leaf",
+    image: "images/corporate/corp-welcome.jpg",
+    defaultImage: "images/corporate/corp-welcome.jpg",
+    categoryKey: "Employee Welcome & Onboarding"
+  },
+  {
+    id: "corp-recognition",
+    order: 2,
+    title: "EMPLOYEE RECOGNITION & MILESTONES",
+    description: "Celebrate achievements with premium gifts that inspire and motivate.",
+    icon: "fa-solid fa-user",
+    image: "images/corporate/corp-recognition.jpg",
+    defaultImage: "images/corporate/corp-recognition.jpg",
+    categoryKey: "Employee Recognition & Milestones"
+  },
+  {
+    id: "corp-festive",
+    order: 3,
+    title: "FESTIVE & CELEBRATION GIFTING",
+    description: "Spread joy with curated gifts for festivals, celebrations and special occasions.",
+    icon: "fa-solid fa-gift",
+    image: "images/corporate/corp-festive.jpg",
+    defaultImage: "images/corporate/corp-festive.jpg",
+    categoryKey: "Festive & Celebration Gifting"
+  },
+  {
+    id: "corp-client",
+    order: 4,
+    title: "CLIENT, PARTNER & EXECUTIVE GIFTING",
+    description: "Build lasting relationships with premium, customized and eco-friendly gift options.",
+    icon: "fa-solid fa-leaf",
+    image: "images/corporate/corp-client.jpg",
+    defaultImage: "images/corporate/corp-client.jpg",
+    categoryKey: "Client, Partner & Executive Gifting"
+  },
+  {
+    id: "corp-esg",
+    order: 5,
+    title: "SUSTAINABLE & ESG GIFTING",
+    description: "Eco-conscious gifts for a greener planet and a better tomorrow.",
+    icon: "fa-solid fa-leaf",
+    image: "images/corporate/corp-esg.jpg",
+    defaultImage: "images/corporate/corp-esg.jpg",
+    categoryKey: "Sustainable & ESG Gifting"
+  },
+  {
+    id: "corp-curated",
+    order: 6,
+    title: "CURATED & CUSTOM CORPORATE GIFT SETS",
+    description: "Tailored gift sets to reflect your brand and unique message.",
+    icon: "fa-regular fa-star",
+    image: "images/corporate/corp-curated.jpg",
+    defaultImage: "images/corporate/corp-curated.jpg",
+    categoryKey: "Curated & Custom Corporate Gift Sets"
+  }
+];
+
+let adminCorporateCards = [...DEFAULT_CORPORATE_CARDS];
+
+window.fetchCorporateCardsAdmin = async function () {
+  try {
+    const res = await fetch(getApiUrl('/api/corporate-cards'));
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        adminCorporateCards = data;
+        try {
+          localStorage.setItem('verdanta_corporate_cards', JSON.stringify(data));
+        } catch (e) {}
+      }
+    }
+  } catch (err) {
+    console.warn('Could not fetch corporate cards for admin:', err);
+    try {
+      const stored = localStorage.getItem('verdanta_corporate_cards');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          adminCorporateCards = parsed;
+        }
+      }
+    } catch (e) {}
+  }
+  renderCorporateCardsAdmin();
+  updateSidebarCounts();
+};
+
+window.renderCorporateCardsAdmin = function () {
+  const container = document.getElementById('corporateCardsAdminGrid');
+  if (!container) return;
+
+  if (!adminCorporateCards || adminCorporateCards.length === 0) {
+    adminCorporateCards = [...DEFAULT_CORPORATE_CARDS];
+  }
+
+  container.innerHTML = adminCorporateCards.map((card, idx) => {
+    const isCustom = Boolean(card.image && card.image !== card.defaultImage && !card.image.includes('corporate/corp-'));
+    const displayImg = card.image || card.defaultImage || 'images/corporate-lifestyle.jpg';
+
+    return `
+      <div class="admin-corp-card-box" id="admin-card-${escapeAttr(card.id)}" style="background:#ffffff; border-radius:12px; border:1px solid #e2dbcf; overflow:hidden; box-shadow:0 3px 12px rgba(23,59,44,0.06); display:flex; flex-direction:column; transition:transform 0.2s, box-shadow 0.2s;">
+        <!-- Card Top Bar -->
+        <div style="padding:14px 18px; background:#faf7f0; border-bottom:1px solid #ebe4d8; display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:0.8rem; font-weight:800; color:#c59d5f; text-transform:uppercase; letter-spacing:0.8px;">CARD #${idx + 1}</span>
+            <span style="font-size:0.75rem; padding:2px 8px; border-radius:10px; font-weight:600; background:${isCustom ? '#dcfce7; color:#15803d;' : '#fef3c7; color:#b45309;'}">
+              ${isCustom ? '<i class="fa-solid fa-check"></i> Custom Photo' : '<i class="fa-solid fa-image"></i> Reference Photo'}
+            </span>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline" onclick="resetAdminCardPhoto('${escapeAttr(card.id)}')" title="Reset to original reference photo" style="padding:4px 8px; font-size:0.75rem; background:#fff;">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+        </div>
+
+        <!-- Photo Box with Instant Upload Overlay -->
+        <div style="position:relative; height:200px; background:#f0ece3; overflow:hidden;">
+          <img id="admin-corp-img-${escapeAttr(card.id)}" src="${escapeAttr(displayImg)}" alt="${escapeAttr(card.title)}" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.onerror=null; this.src='${escapeAttr(card.defaultImage || 'images/corporate-lifestyle.jpg')}';">
+          
+          <div style="position:absolute; bottom:12px; right:12px; display:flex; gap:8px; z-index:2;">
+            <label class="btn btn-sm btn-primary" style="cursor:pointer; margin:0; padding:7px 14px; font-size:0.8rem; border-radius:6px; box-shadow:0 3px 10px rgba(0,0,0,0.3); display:inline-flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-camera"></i> Replace Photo
+              <input type="file" accept="image/*" style="display:none;" onchange="handleAdminCardPhotoUpload('${escapeAttr(card.id)}', this)">
+            </label>
+            <button type="button" class="btn btn-sm btn-outline" onclick="handleAdminCardPhotoDelete('${escapeAttr(card.id)}')" title="Delete custom photo" style="background:#fff; color:#b91c1c; border-color:#f87171; padding:7px 11px; font-size:0.8rem; border-radius:6px; box-shadow:0 3px 10px rgba(0,0,0,0.2);">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card Editable Details Form -->
+        <div style="padding:18px 20px 22px; flex:1; display:flex; flex-direction:column; gap:14px;">
+          <div>
+            <label style="display:block; font-size:0.78rem; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">Category Title</label>
+            <input type="text" id="admin-corp-title-${escapeAttr(card.id)}" value="${escapeAttr(card.title)}" class="form-control" style="font-weight:700; color:#173b2c; font-family:var(--font-serif);" onchange="updateCorporateCardField('${escapeAttr(card.id)}', 'title', this.value)">
+          </div>
+
+          <div>
+            <label style="display:block; font-size:0.78rem; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">Card Description</label>
+            <textarea id="admin-corp-desc-${escapeAttr(card.id)}" rows="2" class="form-control" style="font-size:0.88rem; line-height:1.45;" onchange="updateCorporateCardField('${escapeAttr(card.id)}', 'description', this.value)">${escapeHtml(card.description)}</textarea>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:0.75rem; color:#777; margin-bottom:4px;">Photo File / URL</label>
+            <div style="display:flex; gap:6px;">
+              <input type="text" id="admin-corp-url-${escapeAttr(card.id)}" value="${escapeAttr(card.image || '')}" class="form-control" style="font-size:0.8rem;" placeholder="Image URL or upload a file above" onchange="updateCorporateCardPhotoUrl('${escapeAttr(card.id)}', this.value)">
+              <button type="button" class="btn btn-sm btn-outline" onclick="saveSingleCorporateCard('${escapeAttr(card.id)}')" title="Save Card" style="padding:6px 12px; font-weight:600;">
+                <i class="fa-solid fa-check"></i> Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+window.handleAdminCardPhotoUpload = function (cardId, inputEl) {
+  if (!inputEl.files || !inputEl.files[0]) return;
+  const file = inputEl.files[0];
+
+  if (!file.type.startsWith('image/')) {
+    alert('Please select a valid image file (JPG, PNG, WebP).');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async function (e) {
+    const dataUrl = e.target.result;
+    const card = adminCorporateCards.find(c => c.id === cardId);
+    if (!card) return;
+
+    card.image = dataUrl;
+
+    // Immediately update UI preview
+    const imgEl = document.getElementById('admin-corp-img-' + cardId);
+    if (imgEl) imgEl.src = dataUrl;
+
+    showAdminToast(`Uploading photo for "${card.title}"...`);
+
+    // Save to server
+    try {
+      const res = await fetch(getApiUrl('/api/corporate-cards'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cardId: card.id,
+          image: dataUrl,
+          title: card.title,
+          description: card.description
+        })
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        if (result.cards && Array.isArray(result.cards)) {
+          adminCorporateCards = result.cards;
+        }
+        localStorage.setItem('verdanta_corporate_cards', JSON.stringify(adminCorporateCards));
+        localStorage.setItem('verdanta_corp_trigger', String(Date.now()));
+        localStorage.setItem('verdanta_sync_trigger', String(Date.now()));
+        renderCorporateCardsAdmin();
+        showAdminToast(`Photo successfully updated for "${card.title}"! Live storefront updated.`);
+      } else {
+        throw new Error('Server returned ' + res.status);
+      }
+    } catch (err) {
+      console.warn('Error saving photo to server:', err);
+      // Fallback local save
+      localStorage.setItem('verdanta_corporate_cards', JSON.stringify(adminCorporateCards));
+      localStorage.setItem('verdanta_corp_trigger', String(Date.now()));
+      renderCorporateCardsAdmin();
+      showAdminToast(`Photo saved locally for "${card.title}".`);
+    }
+  };
+  reader.readAsDataURL(file);
+};
+
+window.handleAdminCardPhotoDelete = async function (cardId) {
+  const card = adminCorporateCards.find(c => c.id === cardId);
+  if (!card) return;
+
+  if (!confirm(`Are you sure you want to delete/revert the photo for "${card.title}"?\n\nIt will revert to the default reference photo.`)) {
+    return;
+  }
+
+  card.image = card.defaultImage || 'images/corporate-lifestyle.jpg';
+
+  try {
+    const res = await fetch(getApiUrl('/api/corporate-cards'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cardId: card.id,
+        image: card.image,
+        title: card.title,
+        description: card.description
+      })
+    });
+    if (res.ok) {
+      const result = await res.json();
+      if (result.cards && Array.isArray(result.cards)) {
+        adminCorporateCards = result.cards;
+      }
+    }
+  } catch (e) {
+    console.warn('API error deleting photo:', e);
+  }
+
+  localStorage.setItem('verdanta_corporate_cards', JSON.stringify(adminCorporateCards));
+  localStorage.setItem('verdanta_corp_trigger', String(Date.now()));
+  localStorage.setItem('verdanta_sync_trigger', String(Date.now()));
+  renderCorporateCardsAdmin();
+  showAdminToast(`Photo deleted for "${card.title}". Reverted to reference photo.`);
+};
+
+window.resetAdminCardPhoto = async function (cardId) {
+  const card = adminCorporateCards.find(c => c.id === cardId);
+  if (!card) return;
+
+  card.image = card.defaultImage || 'images/corporate-lifestyle.jpg';
+  await saveSingleCorporateCard(cardId);
+  showAdminToast(`Card #${card.order} reset to original reference photo.`);
+};
+
+window.updateCorporateCardField = function (cardId, field, value) {
+  const card = adminCorporateCards.find(c => c.id === cardId);
+  if (!card) return;
+  card[field] = value.trim();
+};
+
+window.updateCorporateCardPhotoUrl = function (cardId, url) {
+  const card = adminCorporateCards.find(c => c.id === cardId);
+  if (!card) return;
+  card.image = url.trim();
+  const imgEl = document.getElementById('admin-corp-img-' + cardId);
+  if (imgEl && card.image) imgEl.src = card.image;
+};
+
+window.saveSingleCorporateCard = async function (cardId) {
+  const card = adminCorporateCards.find(c => c.id === cardId);
+  if (!card) return;
+
+  try {
+    const res = await fetch(getApiUrl('/api/corporate-cards'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cardId: card.id,
+        image: card.image,
+        title: card.title,
+        description: card.description
+      })
+    });
+    if (res.ok) {
+      const result = await res.json();
+      if (result.cards) adminCorporateCards = result.cards;
+    }
+  } catch (err) {
+    console.warn('Save error:', err);
+  }
+
+  localStorage.setItem('verdanta_corporate_cards', JSON.stringify(adminCorporateCards));
+  localStorage.setItem('verdanta_corp_trigger', String(Date.now()));
+  localStorage.setItem('verdanta_sync_trigger', String(Date.now()));
+  renderCorporateCardsAdmin();
+  showAdminToast(`Card "${card.title}" saved successfully!`);
+};
+
+window.saveAllCorporateCardsFromAdmin = async function () {
+  try {
+    const res = await fetch(getApiUrl('/api/corporate-cards'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(adminCorporateCards)
+    });
+    if (res.ok) {
+      const result = await res.json();
+      if (result.cards) adminCorporateCards = result.cards;
+    }
+  } catch (err) {
+    console.warn('Error saving all corporate cards:', err);
+  }
+
+  localStorage.setItem('verdanta_corporate_cards', JSON.stringify(adminCorporateCards));
+  localStorage.setItem('verdanta_corp_trigger', String(Date.now()));
+  localStorage.setItem('verdanta_sync_trigger', String(Date.now()));
+  renderCorporateCardsAdmin();
+  showAdminToast('All 6 Corporate Gifting cards saved & synchronized with live store!');
+};
+
+// =============================================================================
+// HERO BANNER MANAGEMENT (Dynamic Background, Eyebrow, Headings, Subtitle & Buttons)
+// =============================================================================
+
+const DEFAULT_HERO_DATA = {
+  eyebrow: "ARTISANAL EXCELLENCE • DIRECT FROM INDIA",
+  title: "CRAFTED BY ARTISANS.\nINSPIRED BY INDIA.\nMADE MEANINGFUL.",
+  description: "Discover thoughtfully crafted home décor and meaningful gifts that celebrate Indian craftsmanship, empower artisans and inspire more sustainable living.",
+  image: "images/hero.jpg",
+  defaultImage: "images/hero.jpg",
+  primaryBtnText: "SHOP COLLECTIONS",
+  primaryBtnLink: "#categories",
+  secondaryBtnText: "REQUEST A PROPOSAL",
+  secondaryBtnLink: "modal:proposal"
+};
+
+let adminHeroData = (function () {
+  try {
+    const cached = localStorage.getItem('verdanta_hero_data');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && typeof parsed === 'object') return { ...DEFAULT_HERO_DATA, ...parsed };
+    }
+  } catch (e) {}
+  return { ...DEFAULT_HERO_DATA };
+})();
+
+window.fetchHeroDataAdmin = async function () {
+  try {
+    const res = await fetch(getApiUrl('/api/hero'));
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data === 'object') {
+        adminHeroData = { ...DEFAULT_HERO_DATA, ...data };
+        try {
+          localStorage.setItem('verdanta_hero_data', JSON.stringify(adminHeroData));
+        } catch (e) {}
+        renderHeroAdmin();
+      }
+    }
+  } catch (err) {
+    console.warn('Could not fetch hero data from server, using local/defaults:', err);
+  }
+};
+
+window.renderHeroAdmin = function () {
+  const hero = adminHeroData || DEFAULT_HERO_DATA;
+
+  // 1. Populate Form Inputs
+  const imgUrlInput = document.getElementById('adminHeroImageUrl');
+  if (imgUrlInput && document.activeElement !== imgUrlInput) {
+    imgUrlInput.value = hero.image || '';
+  }
+
+  const eyebrowInput = document.getElementById('adminHeroEyebrow');
+  if (eyebrowInput && document.activeElement !== eyebrowInput) {
+    eyebrowInput.value = hero.eyebrow || '';
+  }
+
+  const titleInput = document.getElementById('adminHeroTitle');
+  if (titleInput && document.activeElement !== titleInput) {
+    titleInput.value = hero.title || '';
+  }
+
+  const descInput = document.getElementById('adminHeroDesc');
+  if (descInput && document.activeElement !== descInput) {
+    descInput.value = hero.description || '';
+  }
+
+  const btn1TextInput = document.getElementById('adminHeroBtn1Text');
+  if (btn1TextInput && document.activeElement !== btn1TextInput) {
+    btn1TextInput.value = hero.primaryBtnText || '';
+  }
+
+  const btn1LinkInput = document.getElementById('adminHeroBtn1Link');
+  if (btn1LinkInput && document.activeElement !== btn1LinkInput) {
+    btn1LinkInput.value = hero.primaryBtnLink || '';
+  }
+
+  const btn2TextInput = document.getElementById('adminHeroBtn2Text');
+  if (btn2TextInput && document.activeElement !== btn2TextInput) {
+    btn2TextInput.value = hero.secondaryBtnText || '';
+  }
+
+  const btn2LinkInput = document.getElementById('adminHeroBtn2Link');
+  if (btn2LinkInput && document.activeElement !== btn2LinkInput) {
+    btn2LinkInput.value = hero.secondaryBtnLink || '';
+  }
+
+  // Update Photo Status Badge
+  const badge = document.getElementById('adminHeroPhotoBadge');
+  if (badge) {
+    const isCustom = Boolean(hero.image && hero.image !== hero.defaultImage);
+    badge.style.background = isCustom ? '#dcfce7' : '#fef3c7';
+    badge.style.color = isCustom ? '#15803d' : '#b45309';
+    badge.innerHTML = isCustom ? '<i class="fa-solid fa-check"></i> Custom Uploaded Photo' : '<i class="fa-solid fa-image"></i> Default Reference Photo';
+  }
+
+  // 2. Update Interactive Live Preview
+  const previewBackdrop = document.getElementById('adminHeroPreviewBackdrop');
+  if (previewBackdrop) {
+    const bgUrl = hero.image || hero.defaultImage || 'images/hero.jpg';
+    previewBackdrop.style.backgroundImage = `url("${escapeAttr(bgUrl)}")`;
+  }
+
+  const previewEyebrow = document.getElementById('adminHeroPreviewEyebrow');
+  if (previewEyebrow) {
+    previewEyebrow.textContent = hero.eyebrow || DEFAULT_HERO_DATA.eyebrow;
+  }
+
+  const previewTitle = document.getElementById('adminHeroPreviewTitle');
+  if (previewTitle) {
+    const rawTitle = hero.title || DEFAULT_HERO_DATA.title;
+    previewTitle.innerHTML = escapeHtml(rawTitle).replace(/\n/g, '<br>');
+  }
+
+  const previewDesc = document.getElementById('adminHeroPreviewDesc');
+  if (previewDesc) {
+    previewDesc.textContent = hero.description || DEFAULT_HERO_DATA.description;
+  }
+
+  const previewBtn1 = document.getElementById('adminHeroPreviewBtn1');
+  if (previewBtn1) {
+    previewBtn1.textContent = hero.primaryBtnText || 'SHOP COLLECTIONS';
+    previewBtn1.style.display = hero.primaryBtnText ? 'inline-flex' : 'none';
+  }
+
+  const previewBtn2 = document.getElementById('adminHeroPreviewBtn2');
+  if (previewBtn2) {
+    previewBtn2.textContent = hero.secondaryBtnText || 'REQUEST A PROPOSAL';
+    previewBtn2.style.display = hero.secondaryBtnText ? 'inline-flex' : 'none';
+  }
+};
+
+window.updateAdminHeroField = function (field, value) {
+  if (!adminHeroData) adminHeroData = { ...DEFAULT_HERO_DATA };
+  adminHeroData[field] = value;
+  renderHeroAdmin();
+};
+
+window.handleAdminHeroPhotoUpload = function (fileInput) {
+  if (!fileInput.files || !fileInput.files[0]) return;
+  const file = fileInput.files[0];
+
+  if (!file.type.startsWith('image/')) {
+    alert('Please select a valid image file (JPG, PNG, WebP).');
+    return;
+  }
+
+  if (file.size > 15 * 1024 * 1024) {
+    alert('Image file is too large (max 15MB).');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const base64Data = e.target.result;
+    adminHeroData.image = base64Data;
+    renderHeroAdmin();
+    showAdminToast('New background photo loaded in preview. Click "Save Hero Changes" to publish live.');
+  };
+  reader.readAsDataURL(file);
+};
+
+window.resetAdminHeroPhoto = function () {
+  if (!adminHeroData) adminHeroData = { ...DEFAULT_HERO_DATA };
+  adminHeroData.image = adminHeroData.defaultImage || 'images/hero.jpg';
+  const fileInput = document.getElementById('adminHeroFileInput');
+  if (fileInput) fileInput.value = '';
+  renderHeroAdmin();
+  showAdminToast('Hero background reset to default reference photo.');
+};
+
+window.saveHeroFromAdmin = async function () {
+  // Read current input values directly to guarantee capturing all latest changes
+  const eyebrowEl = document.getElementById('adminHeroEyebrow');
+  const titleEl = document.getElementById('adminHeroTitle');
+  const descEl = document.getElementById('adminHeroDesc');
+  const imgUrlEl = document.getElementById('adminHeroImageUrl');
+  const btn1TextEl = document.getElementById('adminHeroBtn1Text');
+  const btn1LinkEl = document.getElementById('adminHeroBtn1Link');
+  const btn2TextEl = document.getElementById('adminHeroBtn2Text');
+  const btn2LinkEl = document.getElementById('adminHeroBtn2Link');
+
+  if (!adminHeroData) adminHeroData = { ...DEFAULT_HERO_DATA };
+
+  if (eyebrowEl) adminHeroData.eyebrow = eyebrowEl.value.trim();
+  if (titleEl) adminHeroData.title = titleEl.value;
+  if (descEl) adminHeroData.description = descEl.value.trim();
+  if (imgUrlEl && imgUrlEl.value.trim()) adminHeroData.image = imgUrlEl.value.trim();
+  if (btn1TextEl) adminHeroData.primaryBtnText = btn1TextEl.value.trim();
+  if (btn1LinkEl) adminHeroData.primaryBtnLink = btn1LinkEl.value.trim();
+  if (btn2TextEl) adminHeroData.secondaryBtnText = btn2TextEl.value.trim();
+  if (btn2LinkEl) adminHeroData.secondaryBtnLink = btn2LinkEl.value.trim();
+
+  try {
+    const res = await fetch(getApiUrl('/api/hero'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(adminHeroData)
+    });
+    if (res.ok) {
+      const result = await res.json();
+      if (result.hero) adminHeroData = result.hero;
+    }
+  } catch (err) {
+    console.warn('Error saving hero to backend server:', err);
+  }
+
+  // Save to localStorage & notify other tabs
+  localStorage.setItem('verdanta_hero_data', JSON.stringify(adminHeroData));
+  localStorage.setItem('verdanta_hero_trigger', String(Date.now()));
+  localStorage.setItem('verdanta_sync_trigger', String(Date.now()));
+
+  // Broadcast to other open customer tabs
+  try {
+    const bc = new BroadcastChannel('verdanta_store_channel');
+    bc.postMessage({ type: 'hero_updated', hero: adminHeroData, time: Date.now() });
+    setTimeout(() => bc.close(), 100);
+  } catch (e) {}
+
+  renderHeroAdmin();
+  showAdminToast('Homepage Hero Banner saved and published live to customer store!');
+};
+

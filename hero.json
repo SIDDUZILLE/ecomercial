@@ -1,0 +1,12 @@
+{
+  "eyebrow": "ARTISANAL EXCELLENCE • DIRECT FROM INDIA",
+  "title": "CRAFTED BY ARTISANS.\nINSPIRED BY INDIA.\nMADE MEANINGFUL.",
+  "description": "Discover thoughtfully crafted home décor and meaningful gifts that celebrate Indian craftsmanship, empower artisans and inspire more sustainable living.",
+  "image": "images/hero.jpg",
+  "defaultImage": "images/hero.jpg",
+  "primaryBtnText": "SHOP COLLECTIONS",
+  "primaryBtnLink": "#categories",
+  "secondaryBtnText": "REQUEST A PROPOSAL",
+  "secondaryBtnLink": "modal:proposal",
+  "updatedAt": "2026-10-15T16:19:57Z"
+}

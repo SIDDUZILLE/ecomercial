@@ -1,0 +1,86 @@
+[
+  {
+    "id": "PRP-667017",
+    "name": "harsh",
+    "company": "jhgf",
+    "email": "mnbvc@gmail.com",
+    "phone": "256262956",
+    "type": "Employee Welcome & Onboarding",
+    "units": "Not specified",
+    "notes": "Inquiry for EMPLOYEE WELCOME & ONBOARDING. Please provide product options, logo branding customization, volume pricing tiers, and delivery timelines.",
+    "status": "New",
+    "createdAt": "2026-10-15T16:44:27.017Z"
+  },
+  {
+    "name": "Aarav Mehta",
+    "company": "TechCorp Solutions India",
+    "email": "aarav@techcorp.in",
+    "phone": "+91 98765 12345",
+    "type": "Employee Welcome & Onboarding",
+    "units": "100 Onboarding Kits / ₹3,50,000",
+    "notes": "Looking for custom debossed leather journals, copper tumblers with company logo for new joinees.",
+    "id": "PRP-896435",
+    "status": "New",
+    "createdAt": "2026-10-14T15:14:56.000Z"
+  },
+  {
+    "id": "PRP-495895",
+    "name": "ajay",
+    "company": "verdanta world",
+    "email": "rajuzille3@gmail.com",
+    "phone": "74851451451",
+    "type": "General Inquiry",
+    "units": "9562",
+    "notes": "No additional notes",
+    "status": "Proposal Sent",
+    "createdAt": "2026-10-13T11:21:35.895Z"
+  },
+  {
+    "name": "Aditi Sharma",
+    "company": "Infosys Leadership Studio",
+    "email": "aditi.sharma@infosys.com",
+    "phone": "+91 98450 12345",
+    "type": "Corporate Gifting - Employee Gifting",
+    "units": "300 Gift Kits / ₹4,50,000",
+    "notes": "Bespoke brass and wooden artisan gifts for annual leadership summit.",
+    "status": "New",
+    "id": "PRP-408392",
+    "createdAt": "2026-10-13T11:20:08.000Z"
+  },
+  {
+    "name": "Test Client",
+    "company": "Acme Corp",
+    "email": "test@acme.com",
+    "phone": "+919988776655",
+    "type": "Corporate Gifting",
+    "units": "50 pcs",
+    "notes": "Urgent requirement",
+    "id": "PRP-247915",
+    "status": "New",
+    "createdAt": "2026-10-13T11:17:27.000Z"
+  },
+  {
+    "id": "PRP-90214",
+    "name": "Ananya Deshmukh",
+    "company": "Tata Consultancy Services",
+    "email": "ananya.d@tcs-sample.com",
+    "phone": "+91 98201 12345",
+    "type": "Employee Appreciation Gift Kit",
+    "units": "250 Gift Boxes",
+    "notes": "Looking for corporate appreciation hampers for tech leadership team. Custom debossed company logo required.",
+    "status": "New",
+    "createdAt": "2026-10-13T10:00:00.000Z"
+  },
+  {
+    "id": "PRP-88412",
+    "name": "Marcus Vance",
+    "company": "Nordic Heritage Living (Stockholm)",
+    "email": "marcus@nordicheritage.se",
+    "phone": "+46 8 123 4567",
+    "type": "Export International Buyers",
+    "units": "FOB Consignment / €18,000",
+    "notes": "Interested in exporting terracotta clay urns and sabai grass baskets for our Scandinavian lifestyle boutiques.",
+    "status": "Under Review",
+    "createdAt": "2026-10-12T14:30:00.000Z"
+  }
+]

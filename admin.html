@@ -14,11 +14,61 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <link rel="stylesheet" href="admin.css?v=20261011_v3">
+  <link rel="stylesheet" href="admin.css?v=20261013_layoutfix">
+  <script>
+    if (sessionStorage.getItem('verdanta_admin_auth') === 'authenticated') {
+      document.documentElement.classList.add('admin-logged-in');
+    }
+  </script>
 </head>
 <body>
 
-  <div class="admin-layout">
+  <!-- Secure Admin Authentication Gate Overlay -->
+  <div class="admin-auth-overlay" id="adminAuthOverlay">
+    <div class="admin-auth-card">
+      <div class="admin-auth-header">
+        <div class="brand-icon-wrap" style="width: 58px; height: 58px; margin: 0 auto 14px; background: rgba(197, 157, 95, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--color-gold);">
+          <svg viewBox="0 0 40 40" width="32" height="32" fill="#c59d5f">
+            <path d="M20 2C16.8 2 14.1 3.8 12.8 6.5C11.5 5.6 9.8 5 8 5C4.7 5 2 7.7 2 11C2 13.5 3.5 15.6 5.6 16.5C5.2 17.6 5 18.8 5 20C5 25.5 9.5 30 15 30H18V38H22V30H25C30.5 30 35 25.5 35 20C35 18.8 34.8 17.6 34.4 16.5C36.5 15.6 38 13.5 38 11C38 7.7 35.3 5 32 5C30.2 5 28.5 5.6 27.2 6.5C25.9 3.8 23.2 2 20 2Z"/>
+          </svg>
+        </div>
+        <h2 class="admin-auth-title">Verdanta World</h2>
+        <span class="admin-auth-eyebrow">ARTISAN MANAGEMENT CONSOLE</span>
+        <p class="admin-auth-desc">Protected Administrative Gateway. Sign in with authorized administrator credentials to manage products, categories &amp; proposals.</p>
+      </div>
+
+      <div class="auth-error-banner" id="adminAuthError" style="display: none;"></div>
+
+      <form class="admin-auth-form" onsubmit="handleAdminLogin(event)">
+        <div class="form-group">
+          <label for="adminAuthUser"><i class="fa-solid fa-user-shield"></i> Admin Username</label>
+          <input type="text" id="adminAuthUser" required placeholder="e.g. admin" value="admin" autocomplete="username" autofocus>
+        </div>
+
+        <div class="form-group">
+          <label for="adminAuthPass"><i class="fa-solid fa-key"></i> Admin Password</label>
+          <input type="password" id="adminAuthPass" required placeholder="Enter admin password (e.g. admin123)" autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="adminLoginBtn" style="width: 100%; padding: 12px; margin-top: 10px; font-weight: 700; font-size: 0.95rem; background: var(--color-gold); border-color: var(--color-gold); border-radius: 6px; box-shadow: 0 4px 14px rgba(197, 157, 95, 0.4); cursor: pointer;">
+          <i class="fa-solid fa-lock"></i> Authorize &amp; Sign In
+        </button>
+
+        <div style="margin-top: 14px; font-size: 0.78rem; color: #665; background: #faf7f0; padding: 10px 12px; border-radius: 6px; border: 1px dashed #dcd4c5; text-align: center; line-height: 1.5;">
+          <strong>Admin Access Credentials:</strong><br>
+          Username: <code style="background:#ede6d8; padding:1px 5px; border-radius:3px; font-weight:600;">admin</code> &bull; Password: <code style="background:#ede6d8; padding:1px 5px; border-radius:3px; font-weight:600;">admin123</code>
+        </div>
+      </form>
+
+      <div class="admin-auth-footer">
+        <a href="index.html" class="auth-return-link">
+          <i class="fa-solid fa-arrow-left"></i> Return to Storefront
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-layout" id="adminApp">
     
     <!-- Sidebar -->
     <aside class="admin-sidebar" id="adminSidebar">
@@ -48,6 +98,24 @@
             </button>
           </li>
           <li>
+            <button class="nav-tab-btn" onclick="switchTab('categories')">
+              <i class="fa-solid fa-folder-tree"></i> Categories &amp; Subs
+              <span class="sidebar-badge" id="sidebarCategoryCount">0</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-tab-btn" onclick="switchTab('corporate-cards')">
+              <i class="fa-solid fa-briefcase"></i> Corporate Cards
+              <span class="sidebar-badge badge-gold" id="sidebarCorpCardsCount">6 Cards</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-tab-btn" onclick="switchTab('hero')">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Hero Banner
+              <span class="sidebar-badge" style="background:#e8efe9; color:#173b2c; font-weight:700;">Live</span>
+            </button>
+          </li>
+          <li>
             <button class="nav-tab-btn" onclick="switchTab('proposals')">
               <i class="fa-solid fa-file-signature"></i> Proposal Requests
               <span class="sidebar-badge badge-gold" id="sidebarProposalCount">0</span>
@@ -66,9 +134,6 @@
         <a href="index.html" class="view-store-btn" target="_blank">
           <i class="fa-solid fa-arrow-up-right-from-square"></i> View Live Store
         </a>
-        <button class="reset-catalog-btn" onclick="confirmResetCatalog()">
-          <i class="fa-solid fa-rotate-left"></i> Reset Seed Data
-        </button>
       </div>
     </aside>
 
@@ -95,6 +160,9 @@
             <i class="fa-solid fa-shield-halved"></i>
             <span>Artisan Admin</span>
           </div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="logoutAdmin()" style="background: #fff; border-color: #d32f2f; color: #d32f2f; font-weight: 600; padding: 7px 12px; display: inline-flex; align-items: center; gap: 6px;" title="Sign out of Admin Console">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+          </button>
         </div>
       </header>
 
@@ -232,6 +300,236 @@
 
         </section>
 
+        <!-- ================= TAB: CATEGORIES & SUBCATEGORIES MANAGEMENT ================= -->
+        <section class="tab-pane" id="tab-categories">
+          
+          <!-- Category Department Filter Pills -->
+          <div class="category-channel-filter-bar">
+            <div class="category-channel-pills">
+              <button class="channel-pill-btn active" data-cat-channel="all" onclick="filterCategoriesByChannel('all')">
+                <i class="fa-solid fa-layer-group"></i> All Departments
+              </button>
+              <button class="channel-pill-btn" data-cat-channel="shop" onclick="filterCategoriesByChannel('shop')">
+                <i class="fa-solid fa-store"></i> Shop Collections
+              </button>
+              <button class="channel-pill-btn" data-cat-channel="corporate" onclick="filterCategoriesByChannel('corporate')">
+                <i class="fa-solid fa-briefcase"></i> Corporate Gifting
+              </button>
+              <button class="channel-pill-btn" data-cat-channel="wholesale" onclick="filterCategoriesByChannel('wholesale')">
+                <i class="fa-solid fa-boxes-packing"></i> Wholesale
+              </button>
+              <button class="channel-pill-btn" data-cat-channel="export" onclick="filterCategoriesByChannel('export')">
+                <i class="fa-solid fa-earth-americas"></i> Export &amp; Global
+              </button>
+            </div>
+          </div>
+
+          <div class="table-toolbar category-toolbar" style="margin-top: 16px;">
+            <div style="display: flex; gap: 12px; width: 100%; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+              <div class="search-box" style="flex: 1; min-width: 260px;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="categorySearchInput" placeholder="Search categories and subcategories..." oninput="renderCategoryManagementList()">
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="openAddCategoryModal()" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; white-space: nowrap; padding: 10px 20px; background: var(--color-gold); border-color: var(--color-gold); box-shadow: 0 2px 8px rgba(197, 157, 95, 0.3);">
+                  <i class="fa-solid fa-folder-plus"></i> + Create New Category
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Categories Management List -->
+          <div class="categories-management-container" id="categoriesManagementContainer" style="margin-top: 20px;">
+            <!-- Injected via JS -->
+          </div>
+
+        </section>
+
+        <!-- ================= TAB: CORPORATE GIFTING CARDS (3x2 Grid) ================= -->
+        <section class="tab-pane" id="tab-corporate-cards">
+          
+          <div class="card-mgmt-header" style="background:#fff; border-radius:8px; border:1px solid #ebe4d8; padding:22px 28px; margin-bottom:26px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 2px 10px rgba(0,0,0,0.03);">
+            <div>
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                <h3 style="font-family:var(--font-serif); color:var(--color-primary); font-size:1.45rem; margin:0;">Corporate Gifting Category Cards (3×2 Grid)</h3>
+                <span class="badge" style="background:#e8efe9; color:#173b2c; font-weight:700; padding:3px 10px; border-radius:12px; font-size:0.78rem;">Live Reference Layout</span>
+              </div>
+              <p style="color:#666; margin:0; font-size:0.92rem;">Upload, replace, and delete photos for each of the six corporate gifting cards. All changes automatically sync to the customer-facing page via API integration.</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <a href="index.html#corporate" target="_blank" class="btn btn-outline btn-sm" style="background:#fff; display:inline-flex; align-items:center; gap:6px; font-weight:600;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Preview Live Store
+              </a>
+              <button type="button" class="btn btn-primary btn-sm" onclick="saveAllCorporateCardsFromAdmin()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700;">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Save All Cards
+              </button>
+            </div>
+          </div>
+
+          <!-- Grid of 6 Category Cards -->
+          <div class="corporate-admin-cards-container" id="corporateCardsAdminGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:24px;">
+            <!-- Injected via renderCorporateCardsAdmin() -->
+          </div>
+
+        </section>
+
+        <!-- ================= TAB: HERO BANNER MANAGEMENT ================= -->
+        <section class="tab-pane" id="tab-hero">
+          
+          <div class="card-mgmt-header" style="background:#fff; border-radius:8px; border:1px solid #ebe4d8; padding:22px 28px; margin-bottom:26px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; box-shadow:0 2px 10px rgba(0,0,0,0.03);">
+            <div>
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                <h3 style="font-family:var(--font-serif); color:var(--color-primary); font-size:1.45rem; margin:0;">Homepage Hero Banner &amp; Content</h3>
+                <span class="badge" style="background:#e8efe9; color:#173b2c; font-weight:700; padding:3px 10px; border-radius:12px; font-size:0.78rem;">Live Frontpage Display</span>
+              </div>
+              <p style="color:#666; margin:0; font-size:0.92rem;">Update the homepage hero background photo, headline, tagline, description, and call-to-action buttons. Any saved change syncs automatically to the live customer storefront in real-time.</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <a href="index.html#home" target="_blank" class="btn btn-outline btn-sm" style="background:#fff; display:inline-flex; align-items:center; gap:6px; font-weight:600;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Preview Live Store
+              </a>
+              <button type="button" class="btn btn-primary btn-sm" onclick="saveHeroFromAdmin()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700;">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Save Hero Changes
+              </button>
+            </div>
+          </div>
+
+          <!-- 2-Column Split: Interactive Live Preview & Form Controls -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:26px; align-items:start;">
+            
+            <!-- Left: Live Visual Preview Card -->
+            <div style="background:#fff; border-radius:12px; border:1px solid #e2dbcf; overflow:hidden; box-shadow:0 4px 16px rgba(23,59,44,0.06); position:sticky; top:90px;">
+              <div style="padding:14px 20px; background:#faf7f0; border-bottom:1px solid #ebe4d8; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.82rem; font-weight:800; color:#c59d5f; text-transform:uppercase; letter-spacing:0.8px;">
+                  <i class="fa-solid fa-eye"></i> Live Interactive Preview
+                </span>
+                <span style="font-size:0.75rem; color:#666; background:#fff; border:1px solid #e2dbcf; padding:2px 8px; border-radius:6px;">Real-Time Updates</span>
+              </div>
+
+              <!-- Miniature Storefront Hero Banner -->
+              <div style="position:relative; width:100%; min-height:420px; background:#112019; overflow:hidden; display:flex; align-items:center;">
+                <!-- Background Image -->
+                <div id="adminHeroPreviewBackdrop" style="position:absolute; inset:0; background-image:url('images/hero.jpg'); background-size:cover; background-position:center; transition:background-image 0.3s ease;"></div>
+                <!-- Dark luxury gradient overlay matching storefront -->
+                <div style="position:absolute; inset:0; background:linear-gradient(90deg, rgba(17,32,25,0.92) 0%, rgba(17,32,25,0.76) 50%, rgba(17,32,25,0.40) 100%);"></div>
+
+                <!-- Content Overlay -->
+                <div style="position:relative; z-index:2; padding:32px 28px; max-width:540px; color:#fff;">
+                  <span id="adminHeroPreviewEyebrow" style="display:inline-block; font-size:0.74rem; font-weight:700; color:#c59d5f; letter-spacing:1.8px; text-transform:uppercase; margin-bottom:10px;">ARTISANAL EXCELLENCE • DIRECT FROM INDIA</span>
+                  <h2 id="adminHeroPreviewTitle" style="font-family:var(--font-serif); font-size:1.85rem; line-height:1.2; font-weight:600; color:#ffffff; margin:0 0 14px 0; letter-spacing:0.5px;">CRAFTED BY ARTISANS.<br>INSPIRED BY INDIA.<br>MADE MEANINGFUL.</h2>
+                  <p id="adminHeroPreviewDesc" style="font-size:0.86rem; line-height:1.55; color:rgba(255,255,255,0.85); margin:0 0 20px 0;">Discover thoughtfully crafted home décor and meaningful gifts that celebrate Indian craftsmanship, empower artisans and inspire more sustainable living.</p>
+                  
+                  <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                    <button type="button" id="adminHeroPreviewBtn1" class="btn btn-primary btn-sm" style="pointer-events:none; font-weight:700; letter-spacing:0.6px;">SHOP COLLECTIONS</button>
+                    <button type="button" id="adminHeroPreviewBtn2" class="btn btn-outline btn-sm" style="pointer-events:none; background:rgba(0,0,0,0.3); color:#fff; border-color:rgba(255,255,255,0.6); font-weight:600; letter-spacing:0.6px;">REQUEST A PROPOSAL</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Content Editor Form -->
+            <div style="background:#fff; border-radius:12px; border:1px solid #e2dbcf; padding:24px 26px; box-shadow:0 3px 12px rgba(23,59,44,0.06); display:flex; flex-direction:column; gap:22px;">
+              
+              <!-- 1. Background Image -->
+              <div style="border-bottom:1px solid #f0ece3; padding-bottom:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <label style="font-size:0.82rem; font-weight:800; color:#173b2c; text-transform:uppercase; letter-spacing:0.6px; margin:0;">
+                    <i class="fa-solid fa-image"></i> Hero Background Photograph
+                  </label>
+                  <button type="button" class="btn btn-sm btn-outline" onclick="resetAdminHeroPhoto()" style="padding:3px 9px; font-size:0.75rem; background:#fff;">
+                    <i class="fa-solid fa-rotate-left"></i> Reset to Default
+                  </button>
+                </div>
+                <p style="font-size:0.82rem; color:#666; margin:0 0 12px 0;">Upload a high-resolution interior/lifestyle photograph or specify a URL.</p>
+
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                  <label class="btn btn-primary btn-sm" style="cursor:pointer; margin:0; display:inline-flex; align-items:center; gap:6px; font-weight:700;">
+                    <i class="fa-solid fa-camera"></i> Replace Background Photo
+                    <input type="file" id="adminHeroFileInput" accept="image/*" style="display:none;" onchange="handleAdminHeroPhotoUpload(this)">
+                  </label>
+                  <span id="adminHeroPhotoBadge" style="font-size:0.75rem; padding:4px 10px; border-radius:12px; font-weight:600; background:#fef3c7; color:#b45309;">Reference Photo</span>
+                </div>
+
+                <div style="margin-top:12px;">
+                  <label style="display:block; font-size:0.75rem; color:#777; margin-bottom:4px;">Image Path or URL</label>
+                  <input type="text" id="adminHeroImageUrl" class="form-control" style="font-size:0.82rem;" placeholder="e.g. images/hero.jpg or uploads/products/..." oninput="updateAdminHeroField('image', this.value)">
+                </div>
+              </div>
+
+              <!-- 2. Tagline / Eyebrow -->
+              <div style="border-bottom:1px solid #f0ece3; padding-bottom:18px;">
+                <label style="display:block; font-size:0.82rem; font-weight:800; color:#173b2c; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:6px;">
+                  Tagline / Eyebrow Text
+                </label>
+                <input type="text" id="adminHeroEyebrow" class="form-control" style="font-weight:600;" placeholder="e.g. ARTISANAL EXCELLENCE • DIRECT FROM INDIA" oninput="updateAdminHeroField('eyebrow', this.value)">
+              </div>
+
+              <!-- 3. Headline / Title -->
+              <div style="border-bottom:1px solid #f0ece3; padding-bottom:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <label style="font-size:0.82rem; font-weight:800; color:#173b2c; text-transform:uppercase; letter-spacing:0.6px; margin:0;">
+                    Main Headline
+                  </label>
+                  <span style="font-size:0.73rem; color:#888;">Press Enter for line breaks</span>
+                </div>
+                <textarea id="adminHeroTitle" rows="3" class="form-control" style="font-family:var(--font-serif); font-size:1.1rem; font-weight:700; line-height:1.35; color:#173b2c;" placeholder="Enter main heading lines..." oninput="updateAdminHeroField('title', this.value)"></textarea>
+              </div>
+
+              <!-- 4. Subtitle / Description -->
+              <div style="border-bottom:1px solid #f0ece3; padding-bottom:18px;">
+                <label style="display:block; font-size:0.82rem; font-weight:800; color:#173b2c; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:6px;">
+                  Description / Subtitle
+                </label>
+                <textarea id="adminHeroDesc" rows="3" class="form-control" style="font-size:0.88rem; line-height:1.5;" placeholder="Enter introductory paragraph..." oninput="updateAdminHeroField('description', this.value)"></textarea>
+              </div>
+
+              <!-- 5. Call to Action Buttons -->
+              <div>
+                <label style="display:block; font-size:0.82rem; font-weight:800; color:#173b2c; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:10px;">
+                  Call-to-Action Buttons
+                </label>
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                  <!-- Primary Button -->
+                  <div style="background:#faf8f5; border:1px solid #ebe4d8; border-radius:8px; padding:12px 14px;">
+                    <span style="display:block; font-size:0.75rem; font-weight:700; color:#c59d5f; text-transform:uppercase; margin-bottom:6px;">Primary Button</span>
+                    <div style="margin-bottom:8px;">
+                      <label style="display:block; font-size:0.72rem; color:#666; margin-bottom:3px;">Button Label</label>
+                      <input type="text" id="adminHeroBtn1Text" class="form-control" style="font-size:0.82rem;" placeholder="e.g. SHOP COLLECTIONS" oninput="updateAdminHeroField('primaryBtnText', this.value)">
+                    </div>
+                    <div>
+                      <label style="display:block; font-size:0.72rem; color:#666; margin-bottom:3px;">Link / Destination</label>
+                      <input type="text" id="adminHeroBtn1Link" class="form-control" style="font-size:0.82rem;" placeholder="e.g. #categories" oninput="updateAdminHeroField('primaryBtnLink', this.value)">
+                    </div>
+                  </div>
+
+                  <!-- Secondary Button -->
+                  <div style="background:#faf8f5; border:1px solid #ebe4d8; border-radius:8px; padding:12px 14px;">
+                    <span style="display:block; font-size:0.75rem; font-weight:700; color:#173b2c; text-transform:uppercase; margin-bottom:6px;">Secondary Button</span>
+                    <div style="margin-bottom:8px;">
+                      <label style="display:block; font-size:0.72rem; color:#666; margin-bottom:3px;">Button Label</label>
+                      <input type="text" id="adminHeroBtn2Text" class="form-control" style="font-size:0.82rem;" placeholder="e.g. REQUEST A PROPOSAL" oninput="updateAdminHeroField('secondaryBtnText', this.value)">
+                    </div>
+                    <div>
+                      <label style="display:block; font-size:0.72rem; color:#666; margin-bottom:3px;">Link or Action</label>
+                      <input type="text" id="adminHeroBtn2Link" class="form-control" style="font-size:0.82rem;" placeholder="e.g. modal:proposal or #corporate" oninput="updateAdminHeroField('secondaryBtnLink', this.value)">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Save Changes Button -->
+              <div style="margin-top:6px;">
+                <button type="button" class="btn btn-primary" onclick="saveHeroFromAdmin()" style="width:100%; padding:12px; font-size:0.95rem; font-weight:700; display:flex; justify-content:center; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Save Hero Changes &amp; Publish Live
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+        </section>
+
         <!-- ================= TAB 3: PROPOSALS & REQUESTS ================= -->
         <section class="tab-pane" id="tab-proposals">
           
@@ -263,7 +561,7 @@
                   <th>Est. Quantity / Budget</th>
                   <th>Date</th>
                   <th>Status</th>
-                  <th width="100" style="text-align: right;">Actions</th>
+                  <th width="120" style="text-align: right;">Actions</th>
                 </tr>
               </thead>
               <tbody id="proposalsTableBody">
@@ -487,6 +785,14 @@
               <option value="Generational Craft">Generational Craft</option>
               <option value="New Arrival">New Arrival</option>
               <option value="Curator Choice">Curator Choice</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="prodStockStatus">Stock Availability</label>
+            <select id="prodStockStatus" style="font-weight: 600;">
+              <option value="in" selected>🟢 In Stock (Active & Available)</option>
+              <option value="out">🔴 Out of Stock (Disabled)</option>
+            </select>
           </div>
         </div>
 
@@ -551,8 +857,49 @@
           </div>
           <div class="form-group">
             <label for="newCatImage">Cover Image URL / Path <span class="optional-tag">(Optional)</span></label>
-            <input type="text" id="newCatImage" placeholder="e.g. images/wooden-gallery.jpg or https://...">
+            <input type="text" id="newCatImage" placeholder="e.g. images/wooden-gallery.jpg or https://..." oninput="handleCatUrlInput(this.value)">
           </div>
+        </div>
+
+        <!-- Category Cover Photo Upload Dropzone & Live Preview -->
+        <div class="form-group photo-upload-group" style="margin-bottom: 16px;">
+          <label class="photo-section-heading">
+            <span>Category Cover Photo / Image <span class="optional-tag">(Recommended)</span></span>
+            <span class="photo-sub-hint">Upload high-resolution craft photo for this category. Appears directly on Customer Dashboard cards.</span>
+          </label>
+
+          <div class="photo-upload-dropzone" id="catPhotoDropzone" ondragover="event.preventDefault(); this.style.borderColor='var(--color-gold)';" ondragleave="this.style.borderColor='';" ondrop="handleCatDropFile(event)">
+            <input type="file" id="catFileInput" accept="image/*" style="display: none;" onchange="handleCategoryImageUpload(event)">
+            
+            <div class="dropzone-prompt" id="catDropzonePrompt" onclick="document.getElementById('catFileInput').click()" style="cursor: pointer;">
+              <div class="dropzone-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+              <div class="dropzone-text">
+                <strong style="font-size: 1rem;">Click to Upload Category Cover Photo</strong>
+                <span style="margin-top: 3px;">Or drag & drop photo directly here (JPG, PNG, WEBP)</span>
+              </div>
+              <button type="button" class="btn btn-sm btn-browse-file" style="margin-top: 10px; background: var(--color-gold); border-color: var(--color-gold); color: #fff; font-weight: 700; padding: 8px 18px;">
+                <i class="fa-solid fa-folder-open"></i> Choose Category Cover Photo
+              </button>
+            </div>
+
+            <!-- Live Photo Preview Box -->
+            <div class="photo-preview-wrap" id="catPhotoPreviewWrap" style="display: none;">
+              <div class="preview-img-container" style="max-height: 220px;">
+                <img id="catPhotoPreviewImg" src="" alt="Category Photo Preview" style="max-height: 220px; object-fit: cover;">
+                <div class="preview-overlay-tag" id="catPreviewSourceTag">Category Cover Selected</div>
+              </div>
+              <div style="display: flex; gap: 8px; justify-content: center; margin-top: 10px;">
+                <button type="button" class="btn btn-sm" onclick="document.getElementById('catFileInput').click()" style="background:#fff; border:1px solid #ccc; font-size:0.8rem; font-weight: 600;">
+                  <i class="fa-solid fa-camera-rotate"></i> Change Photo
+                </button>
+                <button type="button" class="btn-remove-photo" onclick="removeUploadedCatImage(event)" title="Remove this photo">
+                  <i class="fa-solid fa-trash-can"></i> Remove Photo
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <input type="hidden" id="catCustomImage" value="">
         </div>
 
         <div class="form-group">
@@ -703,6 +1050,6 @@
     <span id="adminToastMessage">Action completed successfully</span>
   </div>
 
-  <script src="admin.js?v=20261012_v2"></script>
+  <script src="admin.js?v=20261015_hero"></script>
 </body>
 </html>
